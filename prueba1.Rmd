@@ -9,7 +9,21 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-c<-"hola"
-c
+# Instalación automática de paquete.
+
+#Este bloque se encarga de instalar los paquetes necesarios.
+
+
+
+packages = c("tidyverse","knitr","reshape2")
+package.check <- lapply(packages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE,repos='http://cran.rediris.es')
+  }
+  library(x, character.only = TRUE)
+})
+
+search()
+
 ```
 
