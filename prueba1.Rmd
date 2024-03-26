@@ -27,3 +27,15 @@ search()
 
 ```
 
+```{r}
+ruta <- "TicketPDF2TXT.ipynb"
+system(paste("ipynb", ruta))
+l_horas <- list.dirs(ruta, recursive = FALSE)
+
+for (hora in l_horas){
+  l_ficheros <- list.files(hora)
+  trabajo(hora, l_ficheros)
+}
+
+```
+
