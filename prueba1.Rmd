@@ -6,6 +6,7 @@ date: "2024-03-26"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
 ```
 
 ```{r}
@@ -19,7 +20,7 @@ packages = c("tidyverse","knitr","reshape2")
 package.check <- lapply(packages, FUN = function(x) {
   if (!require(x, character.only = TRUE)) {
     install.packages(x, dependencies = TRUE,repos='http://cran.rediris.es')
-  } 
+  }
   library(x, character.only = TRUE)
 })
 
@@ -28,8 +29,36 @@ search()
 ```
 
 ```{r}
-library(tidyverse)
-x <- as.data.frame(readLines("data/20231224 Mercadona 37,49 Ôé¼.txt"))
+rutas <- list.files("prueba/")
+#tiquets <- replicate(rutas, list(NULL))
+```
+
+```{r}
+for (archivo in rutas){
+  
+   x <- readLines(paste("prueba",archivo,sep= "/"), encoding = "latin1")
+   prod <- x[8:length(x)]
+   producto <- list()
+   final <- list()
+   enc = FALSE
+   for (elemento in prod){
+     if (grepl("TOTAL", elemento)){
+         enc = TRUE
+        }
+     if (enc == FALSE){
+        producto <- c(producto, elemento)
+     }
+     if (enc == TRUE){
+       final <- c(final, elemento)
+     }
+   }
+   
+   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = x[4], Fecha = x[5],  Factura_simpl= x[6] , Productos = producto)
+   
+  #df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "Factura_simpl")) 
+
+}
 
 ```
+
 
