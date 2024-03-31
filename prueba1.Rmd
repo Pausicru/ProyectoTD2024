@@ -17,10 +17,7 @@ El objetivo es enfrentarse a un problema real de tratamiento de datos, realizand
 Este proyecto ha sido realizado con control de cambios GIT. Tiene un repositorio compartido entre las miembros del grupo llamado ProyectoTD2024 en la plataforma GitHub y en el cual se ven los cambios y desarrollo del trabajo.
 
 ##Información del proyecto:
-```{r}
-
-```
-
+Se dispone de varios tickets para empezar a trabajar y un jupiter notebook de python (TicketPDF2TXT.ipynb) que transforma todos los ficheros con extensión pdf presentes en la carpeta data en ficheros de texto con toda la información.
 
 ##Instalación de paquetes:
 ```{r}
