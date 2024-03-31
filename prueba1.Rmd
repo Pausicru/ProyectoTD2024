@@ -29,19 +29,28 @@ search()
 ```
 
 ```{r}
+#Cargamos en la vble. 'rutas' los archivos que deseamos leeer:
 rutas <- list.files("prueba/")
 #tiquets <- replicate(rutas, list(NULL))
 ```
 
 ```{r}
+#Recorremos los archivos mediante un bucle 'para',
+#para así poder cargar en un data frame todos
+#los datos de os tiquets:
 for (archivo in rutas){
-  
+  #Leer línea a línea cada tiquet:
    x <- readLines(paste("prueba",archivo,sep= "/"), encoding = "latin1")
+   #Notamos que las primeras líneas de los tiquets son iguales sp:
    prod <- x[8:length(x)]
    producto <- list()
    final <- list()
    enc = FALSE
    for (elemento in prod){
+     #Vemos que, el final de cada tiquet es diferente,
+     #depende de los productos de cada tiquet.
+     #Destacar a partir de la línea donde se encuentra
+     #'TOTAL (€)' :
      if (grepl("TOTAL", elemento)){
          enc = TRUE
         }
@@ -52,7 +61,7 @@ for (archivo in rutas){
        final <- c(final, elemento)
      }
    }
-   
+   #Creamos el dataframe:
    df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = x[4], Fecha = x[5],  Factura_simpl= x[6] , Productos = producto)
    
   #df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "Factura_simpl")) 
