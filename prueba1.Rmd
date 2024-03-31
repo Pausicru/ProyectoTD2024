@@ -2,13 +2,14 @@
 title: "ProyectoTD2024"
 output: html_document
 date: "2024-03-26"
-authors: "Marta Molina, Iñaki Martín"
+authors: "Marta Molina, Iñaki Martín, Nerea Galera"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 rm(list=ls())
 ```
+
 ##Intruducción al trabajo:
 Este proyecto trata sobre desarrollar un programa que permita analizar una serie de tickets de compra de supermercado.
 
@@ -37,26 +38,31 @@ search()
 ```{r}
 #Cargamos en la vble. 'rutas' los archivos que deseamos leeer:
 rutas <- list.files("prueba/")
+
 #tiquets <- replicate(rutas, list(NULL))
 ```
 
 ```{r}
-#Recorremos los archivos mediante un bucle 'para',
-#para así poder cargar en un data frame todos
-#los datos de los tickets:
+# Recorremos los archivos mediante un bucle 'para',
+# para así poder cargar en un data frame todos
+# los datos de los tickets:
+
 for (archivo in rutas){
-  #Leer línea a línea cada tiquet:
+  
    x <- readLines(paste("prueba",archivo,sep= "/"), encoding = "latin1")
+   
    #Notamos que las primeras líneas de los tiquets son iguales sp:
    prod <- x[8:length(x)]
    producto <- list()
    final <- list()
    enc = FALSE
    for (elemento in prod){
+     
      #Vemos que, el final de cada tiquet es diferente,
      #depende de los productos de cada ticket.
      #Destacar a partir de la línea donde se encuentra
      #'TOTAL (€)' :
+
      if (grepl("TOTAL", elemento)){
          enc = TRUE
         }
@@ -67,14 +73,46 @@ for (archivo in rutas){
        final <- c(final, elemento)
      }
    }
-   #Creamos el dataframe:
-   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = x[4], Fecha = x[5],  Factura_simpl= x[6] , Productos = producto)
    
-  #df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "Factura_simpl")) 
+   # Creamos el dataframe:
+   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = x[4], Fecha = x[5],  Factura_simpl= x[6] , Productos = producto[0:length(producto)])
+   
+  df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "Factura_simpl")) 
+  
+  total_columnas <- ncol(df)
+  posicion <- total_columnas - 1
+  df <- df[, -posicion]
+  
+  # Cantidad
+  df_productos <- select(df, 1, 7)
+  df_separado <- df_productos %>%
+  mutate(Cantidad = substr(Productos, 1, 1))
+  df_separado$Productos <- substr(df$Productos, 2, nchar(df$Productos))
+  df_separado$Cantidad <- as.numeric(df_separado$Cantidad)
+  
+  # Importe
+  df_separado$Importe <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", df_separado$Productos)
+  df_separado$Importe <- gsub(",", ".", df_separado$Importe)
+  df_separado$Importe <- as.numeric(df_separado$Importe)
+  
+  # Precio por Unidad
+  df_separado <- df_separado %>% mutate(PUnidad = Importe / Cantidad)
+
+  # Nombre del producto
+  df_separado$Nombre <- substr(df_separado$Productos, 
+                             1, 
+                             nchar(df_separado$Productos) - nchar(format(df_separado$Importe, nsmall = 2)) - 1)
+  df_separado$Nombre[df_separado$Cantidad > 1] <- substr(df_separado$Nombre[df_separado$Cantidad > 1], 
+                                                        1, 
+                                                        nchar(df_separado$Nombre[df_separado$Cantidad > 1]) - nchar(format(df_separado$PUnidad, nsmall = 2)) - 1)
+
+# Sobrescribir la columna Productos con solo el nombre del producto
+  df_separado$Productos <- df_separado$Nombre
 
 }
 
 ```
+
 ##Posibles preguntas que podemos plantearnos:
 ```{r}
 # 1. ¿Influye la hora de compra con la cantidad de productos comprados?, y por consiguiente, ¿influye en el precio total?
@@ -87,6 +125,15 @@ for (archivo in rutas){
 
 
 # 4.¿Los precios de los productos se mantienen en todos los supermercados?
+
+
+# 5. ¿Cuáles son los productos que se suelen comprar juntos?
+
+
+# 6. ¿Cómo varía la composición del carrito de compras según el día de la semana?
+
+
+# 7. ¿Qué productos tienen la mayor variabilidad en los precios?
 ```
 
 
