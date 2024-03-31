@@ -23,8 +23,6 @@ Se dispone de varios tickets para empezar a trabajar y un jupiter notebook de py
 ```{r}
 #Este bloque se encarga de instalar los paquetes necesarios.
 
-
-
 packages = c("tidyverse","knitr","reshape2")
 package.check <- lapply(packages, FUN = function(x) {
   if (!require(x, character.only = TRUE)) {
@@ -34,7 +32,6 @@ package.check <- lapply(packages, FUN = function(x) {
 })
 
 search()
-
 ```
 ##Importación de datos y creación del DataFrame:
 ```{r}
@@ -46,7 +43,7 @@ rutas <- list.files("prueba/")
 ```{r}
 #Recorremos los archivos mediante un bucle 'para',
 #para así poder cargar en un data frame todos
-#los datos de os tiquets:
+#los datos de los tickets:
 for (archivo in rutas){
   #Leer línea a línea cada tiquet:
    x <- readLines(paste("prueba",archivo,sep= "/"), encoding = "latin1")
@@ -57,7 +54,7 @@ for (archivo in rutas){
    enc = FALSE
    for (elemento in prod){
      #Vemos que, el final de cada tiquet es diferente,
-     #depende de los productos de cada tiquet.
+     #depende de los productos de cada ticket.
      #Destacar a partir de la línea donde se encuentra
      #'TOTAL (€)' :
      if (grepl("TOTAL", elemento)){
@@ -77,6 +74,19 @@ for (archivo in rutas){
 
 }
 
+```
+##Posibles preguntas que podemos plantearnos:
+```{r}
+# 1. ¿Influye la hora de compra con la cantidad de productos comprados?, y por consiguiente, ¿influye en el precio total?
+
+
+# 2. Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos?
+
+
+# 3.¿Existe algún producto que siempre o casi siempre se consuma?
+
+
+# 4.¿Los precios de los productos se mantienen en todos los supermercados?
 ```
 
 
