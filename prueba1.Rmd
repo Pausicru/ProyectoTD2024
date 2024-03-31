@@ -127,6 +127,13 @@ for (archivo in rutas){
 # 4.¿Los precios de los productos se mantienen en todos los supermercados?
 
 
+# 5. ¿Cuáles son los productos que se suelen comprar juntos?
+
+
+# 6. ¿Cómo varía la composición del carrito de compras según el día de la semana?
+
+
+# 7. ¿Qué productos tienen la mayor variabilidad en los precios?
 ```
 
 
