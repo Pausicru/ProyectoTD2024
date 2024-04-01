@@ -75,8 +75,14 @@ for (archivo in rutas){
    }
    
    # Creamos el dataframe:
-   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = x[4], Fecha = x[5],  Factura_simpl= x[6] , Productos = producto[0:length(producto)])
-   
+  df <- data.frame(Nombre = x[1], 
+                   Calle = x[2], 
+                   Municipio = x[3], 
+                   Telefono = x[4], 
+                   Fecha = x[5],  
+                   Factura_simpl = x[6], 
+                   Productos = producto[0:length(producto)])
+
   df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "Factura_simpl")) 
   
   total_columnas <- ncol(df)
