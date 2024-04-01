@@ -134,6 +134,15 @@ for (archivo in rutas){
 
 
 # 7. ¿Qué productos tienen la mayor variabilidad en los precios?
+
+
+# 8. ¿Qué categorías de productos contribuyen más al gasto total?
+
+
+# 9. ¿Qué porcentaje del gasto total se destina a productos frescos en comparación con productos envasados o procesados?
+
+
+#10. ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
 ```
 
 
