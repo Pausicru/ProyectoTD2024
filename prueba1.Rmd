@@ -37,25 +37,33 @@ search()
 ##Importación de datos y creación del DataFrame:
 ```{r}
 #Cargamos en la vble. 'rutas' los archivos que deseamos leeer:
-rutas <- list.files("prueba/")
-
-#tiquets <- replicate(rutas, list(NULL))
+rutas <- list.files("data/",  pattern = "\\.txt$")
 ```
 
 ```{r}
 # Recorremos los archivos mediante un bucle 'para',
 # para así poder cargar en un data frame todos
 # los datos de los tickets:
+df_todos <- data.frame()
+df_productos_todos <- data.frame()
+df_fruta_todos <- data.frame()
+df_pescado_todos <- data.frame()
 
 for (archivo in rutas){
   
-   x <- readLines(paste("prueba",archivo,sep= "/"), encoding = "latin1")
+
+   x <- readLines(paste("data", archivo, sep = "/"), encoding = "latin1")
    
    #Notamos que las primeras líneas de los tiquets son iguales sp:
    prod <- x[8:length(x)]
    producto <- list()
+   lista_pescado = list()
+   lista_fruta = list()
    final <- list()
    enc = FALSE
+   pescado = FALSE
+   fruta = FALSE
+   parking = FALSE
    for (elemento in prod){
      
      #Vemos que, el final de cada tiquet es diferente,
@@ -65,32 +73,47 @@ for (archivo in rutas){
 
      if (grepl("TOTAL", elemento)){
          enc = TRUE
-        }
-     if (enc == FALSE){
-        producto <- c(producto, elemento)
+     }
+     if (grepl("PARKING", elemento)){
+         parking = TRUE
+     }
+      if (!grepl("\\d$", elemento) & pescado == FALSE) {
+         fruta = TRUE
+     }
+
+
+     if (enc == FALSE & pescado == FALSE & fruta == FALSE & parking == FALSE){
+         producto <- c(producto, elemento)
+     }
+     if (fruta == TRUE & enc == FALSE & pescado == FALSE){
+       lista_fruta <- c(lista_fruta, elemento)
+     }
+     if (pescado == TRUE & enc == FALSE & fruta == FALSE){
+       lista_pescado <- c(lista_pescado, elemento)
      }
      if (enc == TRUE){
        final <- c(final, elemento)
      }
+          if (grepl("PESCADO", elemento)){
+         pescado = TRUE
+         fruta = FALSE
+     }
+     
    }
-   
+   partes <- strsplit(x[5], " OP: ")[[1]]
    # Creamos el dataframe:
-  df <- data.frame(Nombre = x[1], 
-                   Calle = x[2], 
-                   Municipio = x[3], 
-                   Telefono = x[4], 
-                   Fecha = x[5],  
-                   Factura_simpl = x[6], 
-                   Productos = producto[0:length(producto)])
-
-  df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "Factura_simpl")) 
+   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = x[4], Fecha = partes[1],  OP = partes[2], Factura_simpl= x[6] , Productos = producto[0:length(producto)])
   
+  df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "OP", "Factura_simpl")) 
+
+  # Ponemos todos los tickets
+  df_todos <- rbind(df_todos, df)
   total_columnas <- ncol(df)
   posicion <- total_columnas - 1
   df <- df[, -posicion]
   
   # Cantidad
-  df_productos <- select(df, 1, 7)
+  df_productos <- select(df, 1, 8)
   df_separado <- df_productos %>%
   mutate(Cantidad = substr(Productos, 1, 1))
   df_separado$Productos <- substr(df$Productos, 2, nchar(df$Productos))
@@ -114,8 +137,67 @@ for (archivo in rutas){
 
 # Sobrescribir la columna Productos con solo el nombre del producto
   df_separado$Productos <- df_separado$Nombre
+  
+  
+  df_separado$Total_euros <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", final[1])
+  df_separado$Total_euros <- gsub(",", ".", df_separado$Total_euros)
+  df_separado$Total_euros <- as.numeric(df_separado$Total_euros)
+  df_separado$OP <- partes[2]
+  
+  #Lo metemos en el data frame conjunto
+  df_productos_todos <- rbind(df_productos_todos, df_separado)
 
+  
+  if (fruta == TRUE){
+    df_fruta <- data.frame(Productos = character(), Info = character(), OP = character())
+    indice <- length(lista_fruta) -1
+    i <- 1  # Inicializar el índice
+  
+
+  while (i <= indice) {
+
+    df_fruta <- rbind(df_fruta, data.frame(Productos = lista_fruta[[i]], Info = lista_fruta[[i+1]], OP = partes[2]))
+    i <- i + 2  
+  }
+    df_fruta <- df_fruta %>%
+    mutate(Cantidad = substr(Productos, 1, 1))
+    df_fruta$Nombre <- substr(df_fruta$Productos, 2, nchar(df_fruta$Productos))
+    df_fruta$Importe <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", df_fruta$Info)
+    df_fruta$Kgs <- sub("^(\\d+[,.]\\d+).*", "\\1", df_fruta$Info)
+    df_fruta$Importe <- gsub(",", ".", df_fruta$Importe)
+    df_fruta$Kgs <- gsub(",", ".", df_fruta$Kgs)
+    df_fruta$Importe <- as.numeric(df_fruta$Importe)
+    df_fruta$Kgs <- as.numeric(df_fruta$Kgs)
+    df_fruta <- df_fruta %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
+    df_fruta_todos <- rbind(df_fruta_todos, df_fruta)
+    
+   
+  }
+  if (pescado == TRUE){
+    df_pescado <- data.frame(Productos = character(), Info = character(), OP = character())
+    indice <- length(lista_pescado) -1
+    i <- 1  # Inicializar el índice
+  
+
+  while (i <= indice) {
+    print(lista_pescado)
+    df_pescado <- rbind(df_pescado, data.frame(Productos = lista_pescado[[i]], Info = lista_pescado[[i+1]], OP = partes[2]))
+    i <- i + 2  
+  }
+
+    df_pescado$Nombre <- substr(df_pescado$Productos, 1, nchar(df_pescado$Productos))
+    df_pescado$Importe <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", df_pescado$Info)
+    df_pescado$Kgs <- sub("^(\\d+[,.]\\d+).*", "\\1", df_pescado$Info)
+    df_pescado$Importe <- gsub(",", ".", df_pescado$Importe)
+    df_pescado$Kgs <- gsub(",", ".", df_pescado$Kgs)
+    df_pescado$Importe <- as.numeric(df_pescado$Importe)
+    df_pescado$Kgs <- as.numeric(df_pescado$Kgs)
+    df_pescado <- df_pescado %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
+    df_pescado_todos <- rbind(df_pescado_todos, df_pescado)
+
+  }
 }
+
 
 ```
 
