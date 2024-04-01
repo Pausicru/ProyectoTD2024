@@ -1,0 +1,119 @@
+---
+title: "ProyectoTD2024"
+output: html_document
+date: "2024-03-26"
+authors: "Marta Molina, Iñaki Martín, Nerea Galera"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+##Intruducción al trabajo:
+Este proyecto trata sobre desarrollar un programa que permita analizar una serie de tickets de compra de supermercado.
+
+El objetivo es enfrentarse a un problema real de tratamiento de datos, realizando un seguimiento de (evolución de precios, compras más habituales, productos más consumidos, supermercado habitual, hora de compra, etc).
+
+Este proyecto ha sido realizado con control de cambios GIT. Tiene un repositorio compartido entre las miembros del grupo llamado ProyectoTD2024 en la plataforma GitHub y en el cual se ven los cambios y desarrollo del trabajo.
+
+##Información del proyecto:
+Se dispone de varios tickets para empezar a trabajar y un jupiter notebook de python (TicketPDF2TXT.ipynb) que transforma todos los ficheros con extensión pdf presentes en la carpeta data en ficheros de texto con toda la información.
+
+##Instalación de paquetes:
+```{r}
+#Este bloque se encarga de instalar los paquetes necesarios.
+
+packages = c("tidyverse","knitr","reshape2")
+package.check <- lapply(packages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE,repos='http://cran.rediris.es')
+  }
+  library(x, character.only = TRUE)
+})
+
+search()
+```
+##Importación de datos y creación del DataFrame:
+```{r}
+#Cargamos en la vble. 'rutas' los archivos que deseamos leeer:
+rutas <- list.files("prueba/")
+
+#tiquets <- replicate(rutas, list(NULL))
+```
+
+```{r}
+# Recorremos los archivos mediante un bucle 'para',
+# para así poder cargar en un data frame todos
+# los datos de los tickets:
+
+# Definir la ruta de la carpeta donde se encuentran los tickets
+ruta_carpeta_tickets <- "prueba/"
+
+# Listar todos los archivos de ticket en la carpeta
+rutas <- list.files(path = ruta_carpeta_tickets, full.names = TRUE)
+
+# Crear un dataframe vacío para acumular los resultados
+todos_los_tickets <- data.frame()
+
+# Recorrer los archivos de ticket con un bucle
+for (archivo in rutas){
+  
+   x <- readLines(archivo, encoding = "latin1")
+   
+   # Las primeras líneas de los tickets contienen los datos generales
+   # Procesar los productos y final del ticket
+   inicio_productos <- min(which(x == "Descripción P. Unit Importe")) + 1
+   fin_productos <- which(grepl("TOTAL \\(€\\)", x)) - 1
+   productos <- x[inicio_productos:fin_productos]
+   
+   # Resto de las líneas después de los productos hasta 'TOTAL (€)'
+   final <- x[fin_productos:length(x)]
+   
+   # Extraer la información de los productos y crear un dataframe para ellos
+   # (El código de procesamiento de productos aquí ha sido simplificado)
+   # Debes ajustar esto para que coincida con el formato exacto de tus tickets
+   df_productos <- data.frame(Productos = productos)
+   
+   # Información general del ticket
+   datos_generales <- x[1:6]
+   df_general <- data.frame(t(datos_generales))
+   colnames(df_general) <- c("Nombre", "Calle", "Municipio", "Telefono", "Fecha", "Factura_simpl")
+   
+   # Combinar la información general y los productos en un solo dataframe
+   df <- cbind(df_general, df_productos)
+   
+   # Agregar el dataframe del ticket actual al dataframe que contiene todos los tickets
+   todos_los_tickets <- rbind(todos_los_tickets, df)
+}
+
+# Ver los datos combinados de todos los tickets
+print(todos_los_tickets)
+
+  
+```
+
+##Posibles preguntas que podemos plantearnos:
+```{r}
+# 1. ¿Influye la hora de compra con la cantidad de productos comprados?, y por consiguiente, ¿influye en el precio total?
+
+
+# 2. Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos?
+
+
+# 3.¿Existe algún producto que siempre o casi siempre se consuma?
+
+
+# 4.¿Los precios de los productos se mantienen en todos los supermercados?
+
+
+# 5. ¿Cuáles son los productos que se suelen comprar juntos?
+
+
+# 6. ¿Cómo varía la composición del carrito de compras según el día de la semana?
+
+
+# 7. ¿Qué productos tienen la mayor variabilidad en los precios?
+```
+
+
