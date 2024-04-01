@@ -2,7 +2,7 @@
 title: "ProyectoTD2024"
 output: html_document
 date: "2024-03-26"
-authors: "Marta Molina, Iñaki Martín, Nerea Galera"
+authors: "Marta Molina, Iñaki Martín, Nerea Galera, Sergio Mut"
 ---
 
 ```{r setup, include=FALSE}
