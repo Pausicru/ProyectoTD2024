@@ -86,7 +86,7 @@ for (archivo in rutas){
      if (enc == FALSE & pescado == FALSE & fruta == FALSE & parking == FALSE){
          producto <- c(producto, elemento)  # Añadir elemento a la lista de productos
      }
-     if (fruta == TRUE & enc == FALSE & pescado == FALSE){
+     if (fruta == TRUE & enc == FALSE & pescado == FALSE & parking == FALSE){
        lista_fruta <- c(lista_fruta, elemento) # Añadir elemento a la lista de productos de fruta
      }
      if (pescado == TRUE & enc == FALSE & fruta == FALSE){
@@ -102,8 +102,9 @@ for (archivo in rutas){
      
    }
    partes <- strsplit(x[5], " OP: ")[[1]]
+   id <- strsplit(x[6], "FACTURA SIMPLIFICADA: ")[[1]]
    # Crear el dataframe principal con la información obtenida
-   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = x[4], Fecha = partes[1],  OP = partes[2], Factura_simpl= x[6] , Productos = producto[0:length(producto)])
+   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = x[4], Fecha = partes[1],  OP = partes[2], Factura_simpl= id[[2]] , Productos = producto[0:length(producto)])
   
   # Convertir el dataframe de formato ancho a formato largo
   df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "OP", "Factura_simpl")) 
@@ -115,7 +116,7 @@ for (archivo in rutas){
   df <- df[, -posicion]
   
   # Cantidad
-  df_productos <- select(df, 1, 8)
+  df_productos <- select(df, 1,7, 8)
   df_separado <- df_productos %>%
   mutate(Cantidad = substr(Productos, 1, 1))
   df_separado$Productos <- substr(df$Productos, 2, nchar(df$Productos))
@@ -150,7 +151,7 @@ for (archivo in rutas){
   df_productos_todos <- rbind(df_productos_todos, df_separado)
 
   
-  if (fruta == TRUE){
+  if (fruta == TRUE & length(lista_fruta) != 0 ){
     df_fruta <- data.frame(Productos = character(), Info = character(), OP = character())
     indice <- length(lista_fruta) -1
     i <- 1  # Inicializar el índice
@@ -158,7 +159,7 @@ for (archivo in rutas){
 
   while (i <= indice) {
 
-    df_fruta <- rbind(df_fruta, data.frame(Productos = lista_fruta[[i]], Info = lista_fruta[[i+1]], OP = partes[2]))
+    df_fruta <- rbind(df_fruta, data.frame(Productos = lista_fruta[[i]], Info = lista_fruta[[i+1]], OP = partes[[2]]))
     i <- i + 2  
   }
     df_fruta <- df_fruta %>%
@@ -170,6 +171,7 @@ for (archivo in rutas){
     df_fruta$Kgs <- gsub(",", ".", df_fruta$Kgs)
     df_fruta$Importe <- as.numeric(df_fruta$Importe)
     df_fruta$Kgs <- as.numeric(df_fruta$Kgs)
+    df_fruta$Factura_simpl <- id[[2]]
     df_fruta <- df_fruta %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
     df_fruta_todos <- rbind(df_fruta_todos, df_fruta)
    
@@ -181,8 +183,7 @@ for (archivo in rutas){
   
 
   while (i <= indice) {
-    print(lista_pescado)
-    df_pescado <- rbind(df_pescado, data.frame(Productos = lista_pescado[[i]], Info = lista_pescado[[i+1]], OP = partes[2]))
+    df_pescado <- rbind(df_pescado, data.frame(Productos = lista_pescado[[i]], Info = lista_pescado[[i+1]], OP = partes[2]) )
     i <- i + 2  
   }
 
@@ -194,11 +195,72 @@ for (archivo in rutas){
     df_pescado$Importe <- as.numeric(df_pescado$Importe)
     df_pescado$Kgs <- as.numeric(df_pescado$Kgs)
     df_pescado <- df_pescado %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
+    df_pescado$Factura_simpl <- id[[2]]
     df_pescado_todos <- rbind(df_pescado_todos, df_pescado)
 
   }
 }
 ```
+
+```{r}
+x_fruta <- df_fruta_todos$Productos
+x_prod <- df_productos_todos$Productos
+x_pescado <- df_pescado_todos$Productos
+Productos <- append(x_fruta, x_prod)
+
+
+
+
+
+df_total <- full_join(df_fruta_todos, df_productos_todos, by="Productos")
+
+
+
+df_total <- df_total %>% mutate(Nombre_def = ifelse(is.na(Nombre.x), Nombre.y, Nombre.x)) %>% select(!c(Nombre.x, Nombre.y)) %>% mutate(Nombre= Nombre_def) %>%select(!Nombre_def)
+
+df_total <- df_total %>% mutate(Cantidad_def = ifelse(is.na(Cantidad.x), Cantidad.y, Cantidad.x)) %>% select(!c(Cantidad.x, Cantidad.y)) %>% mutate(Cantidad=Cantidad_def) %>% select(!Cantidad_def)
+
+df_total <- df_total %>% mutate(Importe_def = ifelse(is.na(Importe.x), Importe.y, Importe.x)) %>% select(!c(Importe.x, Importe.y))%>% mutate(Importe=Importe_def) %>% select(!Importe_def)
+
+df_total <- df_total %>% mutate(OP_def = ifelse(is.na(OP.x), OP.y, OP.x)) %>% select(!c(OP.x, OP.y))%>% mutate(OP=OP_def) %>% select(!OP_def)
+
+df_total <- df_total %>%
+  mutate(Factura_simpl_def = ifelse(is.na(Factura_simpl.y), Factura_simpl.x, Factura_simpl.y)) %>%
+  select(-c(Factura_simpl.y, Factura_simpl.x)) %>%
+  mutate(Factura_simpl = Factura_simpl_def) %>%
+  select(-Factura_simpl_def)
+
+
+
+df_total_def <- full_join(df_total, df_pescado_todos, by="Productos")
+
+df_total_def <- df_total_def %>% mutate(Nombre_def = ifelse(is.na(Nombre.x), Nombre.y, Nombre.x)) %>% select(!c(Nombre.x, Nombre.y)) %>% mutate(Nombre= Nombre_def) %>%select(!Nombre_def)
+
+df_total_def <- df_total_def %>% mutate(Importe_def = ifelse(is.na(Importe.x), Importe.y, Importe.x)) %>% select(!c(Importe.x, Importe.y))%>% mutate(Importe=Importe_def) %>% select(!Importe_def)
+
+df_total_def <- df_total_def %>% mutate(OP_def = ifelse(is.na(OP.x), OP.y, OP.x)) %>% select(!c(OP.x, OP.y))%>% mutate(OP=OP_def) %>% select(!OP_def)
+
+df_total_def <- df_total_def %>% mutate(Kgs_def = ifelse(is.na(Kgs.x),Kgs.y, Kgs.x)) %>% select(!c(Kgs.x, Kgs.y)) %>% mutate(Kgs= Kgs_def) %>%select(!Kgs_def)
+
+df_total_def <- df_total_def %>% mutate(Eur_el_Kg_def = ifelse(is.na(Eur_el_Kg.x), Eur_el_Kg.y, Eur_el_Kg.x)) %>% select(!c(Eur_el_Kg.x, Eur_el_Kg.y)) %>% mutate(Eur_el_Kg=Eur_el_Kg_def) %>% select(!Eur_el_Kg_def)
+
+df_total_def <- df_total_def %>% mutate(Info_def = ifelse(is.na(Info.x), Info.y, Info.x)) %>% select(!c(Info.x, Info.y)) %>% mutate(Info=Info_def) %>% select(!Info_def)
+
+df_total_def <- df_total_def %>%
+  mutate(Factura_simpl_def = ifelse(is.na(Factura_simpl.y), Factura_simpl.x, Factura_simpl.y)) %>%
+  select(-c(Factura_simpl.y, Factura_simpl.x)) %>%
+  mutate(Factura_simpl = Factura_simpl_def) %>%
+  select(-Factura_simpl_def)
+
+df_calles <- df_todos  %>% select(!c(Producto,Productos,OP)) %>% mutate(nombre_super = Nombre)  %>% select(!Nombre) 
+
+df_calles <- unique(df_calles)
+
+df_ticktes <- left_join(df_total_def,df_calles,by = "Factura_simpl")
+
+
+```
+
 
 ##Posibles preguntas que podemos plantearnos:
 ```{r}
