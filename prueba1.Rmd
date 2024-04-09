@@ -103,8 +103,9 @@ for (archivo in rutas){
    }
    partes <- strsplit(x[5], " OP: ")[[1]]
    id <- strsplit(x[6], "FACTURA SIMPLIFICADA: ")[[1]]
+   telef <- strsplit(x[4], "TELÉFONO: ")[[1]]
    # Crear el dataframe principal con la información obtenida
-   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = x[4], Fecha = partes[1],  OP = partes[2], Factura_simpl= id[[2]] , Productos = producto[0:length(producto)])
+   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = telef[2], Fecha = partes[1],  OP = partes[2], Factura_simpl= id[[2]] , Productos = producto[0:length(producto)])
   
   # Convertir el dataframe de formato ancho a formato largo
   df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "OP", "Factura_simpl")) 
@@ -255,6 +256,7 @@ df_total_def <- df_total_def %>%
 df_calles <- df_todos  %>% select(!c(Producto,Productos,OP)) %>% mutate(nombre_super = Nombre)  %>% select(!Nombre) 
 
 df_calles <- unique(df_calles)
+df_calles$Fecha <- as.POSIXct(df_calles$Fecha, format = "%d/%m/%Y %H:%M")
 
 df_ticktes <- left_join(df_total_def,df_calles,by = "Factura_simpl")
 
