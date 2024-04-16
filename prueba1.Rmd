@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 rm(list=ls())
 ```
 
-##Intruducción al trabajo:
+## 1. Introducción al trabajo:
 Este proyecto trata sobre desarrollar un programa que permita analizar una serie de tickets de compra de supermercado.
 
 El objetivo es enfrentarse a un problema real de tratamiento de datos, realizando un seguimiento de (evolución de precios, compras más habituales, productos más consumidos, supermercado habitual, hora de compra, etc).
@@ -20,7 +20,8 @@ Este proyecto ha sido realizado con control de cambios GIT. Tiene un repositorio
 ##Información del proyecto:
 Se dispone de varios tickets para empezar a trabajar y un jupiter notebook de python (TicketPDF2TXT.ipynb) que transforma todos los ficheros con extensión pdf presentes en la carpeta data en ficheros de texto con toda la información.
 
-##Instalación de paquetes:
+## 1.1 Instalación de paquetes:
+Primeramente, vamos a cargar todas las librerías necesarias en las diferentes fases del proyecto. Haciendo esto de una forma elegante, comprobando si el usuario tiene instalados los paquetes necesarios y desacrgándolos en caso necesario.
 ```{r}
 #Este bloque se encarga de instalar los paquetes necesarios.
 
@@ -35,6 +36,7 @@ package.check <- lapply(packages, FUN = function(x) {
 search()
 ```
 ##Importación de datos y creación del DataFrame:
+A continuación se realiza la carga del conjunto de  datos que provienen de unos tickets de un supermercado, en este caso el Mercadona. Estos tickets se encuentran en dos tipos de formato, algunos están en pdf y otros en txt almacenados en la carpeta ./data incluida en el repositorio del proyecto. Debido a la mezcla de formatos, para analizar nuestros datos necesitamos tener todos los archivos en formato txt, por lo que usaremos el archivo "TicketPDF2TXT.ipynb" que automáticamente transforma los tickets en formato pdf en txt.
 ```{r}
 #Cargamos en la vble. 'rutas' los archivos que deseamos leeer,
 #constamos de 12 archivos a leer, que corresponden
