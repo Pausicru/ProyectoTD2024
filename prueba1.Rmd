@@ -23,7 +23,7 @@ Se dispone de varios tickets para empezar a trabajar y un jupiter notebook de py
 ## 1.1 Instalación de paquetes:
 Primeramente, vamos a cargar todas las librerías necesarias en las diferentes fases del proyecto. Haciendo esto de una forma elegante, comprobando si el usuario tiene instalados los paquetes necesarios y desacrgándolos en caso necesario.
 ```{r}
-#Este bloque se encarga de instalar los paquetes necesarios.
+# Este bloque se encarga de instalar los paquetes necesarios.
 
 packages = c("tidyverse","knitr","reshape2")
 package.check <- lapply(packages, FUN = function(x) {
@@ -37,50 +37,51 @@ search()
 ```
 ##Importación de datos y creación del DataFrame:
 A continuación se realiza la carga del conjunto de  datos que provienen de unos tickets de un supermercado, en este caso el Mercadona. Estos tickets se encuentran en dos tipos de formato, algunos están en pdf y otros en txt almacenados en la carpeta ./data incluida en el repositorio del proyecto. Debido a la mezcla de formatos, para analizar nuestros datos necesitamos tener todos los archivos en formato txt, por lo que usaremos el archivo "TicketPDF2TXT.ipynb" que automáticamente transforma los tickets en formato pdf en txt.
+Para poder leer la información de forma adecuada y clarificadora creamos distintos dataframes con la distinta información que nos puede aportar cada uno de los tickets. Separandolos primeramente ya que cada dato contiene una información diferente para luego crear un último data frame final con toda la información ordenada.
 ```{r}
-#Cargamos en la vble. 'rutas' los archivos que deseamos leeer,
-#constamos de 12 archivos a leer, que corresponden
-#a 12 tickets de compra de supermercado:
+# Cargamos en la variable. 'rutas' los archivos que deseamos leer,
+# poseemos de 12 archivos a leer, que se corresponden
+# a 12 tickets de compra de un supermercado:
 rutas <- list.files("data/",  pattern = "\\.txt$")
 ```
 
 ```{r}
-#DATAGRAMES individuales:
+# DATAFRAMES individuales:
 
-#Data frame para almacenar todos los datos de los tickets.
+# Data frame para almacenar todos los datos de los tickets.
 df_todos <- data.frame()  
-#Data frame para almacenar los datos de los productos de los tickets.
+# Data frame para almacenar los datos de los productos de los tickets.
 df_productos_todos <- data.frame() 
-#Data frame para almacenar los datos de la fruta de los tickets.
+# Data frame para almacenar los datos de la fruta de los tickets.
 df_fruta_todos <- data.frame()
-#Data frame para almacenar los datos del pescado de los tickets.
+# Data frame para almacenar los datos del pescado de los tickets.
 df_pescado_todos <- data.frame()  
 
-#Recorremos los archivos mediante un bucle 'para',
-#para así poder cargar en un data frame todos
-#los datos de los tickets:
+# Recorremos los archivos mediante un bucle 'para',
+# para así poder cargar en un data frame todos
+# los datos de los tickets:
 for (archivo in rutas){
   
-  #Utilizamos la función 'readlines()'
+  # Utilizamos la función 'readlines()'
   x <- readLines(paste("data", archivo, sep = "/"), encoding = "latin1")
    
-  prod <- x[8:length(x)]   #Notamos que las primeras líneas de los tickets son iguales siempre:
-  producto <- list()  #Lista para almacenar los productos.
-  lista_pescado = list()  #Lista para almacenar los productos de pescado.
-  lista_fruta = list()  #Lista para almacenar los productos de fruta.
-  final <- list()  #Lista para almacenar la información final de cada ticket.
-  enc = FALSE  #Variable para controlar si se ha encontrado la línea 'TOTAL (€)'.
-  pescado = FALSE  #Variable para controlar si se está procesando pescado.
-  fruta = FALSE  #Variable para controlar si se está procesando fruta.
-  parking = FALSE  #Variable para controlar si se ha encontrado la línea 'PARKING'.
+  prod <- x[8:length(x)]   # Notamos que las primeras líneas de los tickets son iguales siempre:
+  producto <- list()  # Lista para almacenar los productos.
+  lista_pescado = list()  # Lista para almacenar los productos de pescado.
+  lista_fruta = list()  # Lista para almacenar los productos de fruta.
+  final <- list()  # Lista para almacenar la información final de cada ticket.
+  enc = FALSE  # Variable para controlar si se ha encontrado la línea 'TOTAL (€)'.
+  pescado = FALSE  # Variable para controlar si se está procesando pescado.
+  fruta = FALSE  # Variable para controlar si se está procesando fruta.
+  parking = FALSE  # Variable para controlar si se ha encontrado la línea 'PARKING'.
   
-  #Bucle 'para' con el objetivo de encontrar los elementos deseados:
+  # Bucle 'para' con el objetivo de encontrar los elementos deseados:
    for (elemento in prod){
      
-     #Vemos que, el final de cada tiquet es diferente,
-     #depende de los productos de cada ticket.
-     #Destacar a partir de la línea donde se encuentra
-     #'TOTAL (€)' :
+     # Vemos que, el final de cada tiquet es diferente,
+     # depende de los productos de cada ticket.
+     # Destacar a partir de la línea donde se encuentra
+     # 'TOTAL (€)' :
 
      if (grepl("TOTAL", elemento)){
          enc = TRUE
@@ -88,13 +89,13 @@ for (archivo in rutas){
      if (grepl("PARKING", elemento)){
          parking = TRUE
      }
-      #Comprobar si la línea no termina con un número 
-      #y no se ha empezado a procesar pescado.
+      # Comprobar si la línea no termina con un número 
+      # y no se ha empezado a procesar pescado.
       if (!grepl("\\d$", elemento) & pescado == FALSE) {
          fruta = TRUE # Indicar que se está procesando fruta
      }
 
-    #Procesamiento de la línea dependiendo de las condiciones anteriores.
+    # Procesamiento de la línea dependiendo de las condiciones anteriores.
      if (enc == FALSE & pescado == FALSE & fruta == FALSE & parking == FALSE){
          producto <- c(producto, elemento)  # Añadir elemento a la lista de productos
      }
@@ -102,14 +103,14 @@ for (archivo in rutas){
        lista_fruta <- c(lista_fruta, elemento) #Añadir elemento a la lista de productos de fruta.
      }
      if (pescado == TRUE & enc == FALSE & fruta == FALSE){
-       lista_pescado <- c(lista_pescado, elemento) #Añadir elemento a la lista de productos de pescado.
+       lista_pescado <- c(lista_pescado, elemento) # Añadir elemento a la lista de productos de pescado.
      }
      if (enc == TRUE){
-       final <- c(final, elemento) #Añadir elemento a la lista de información final.
+       final <- c(final, elemento) # Añadir elemento a la lista de información final.
      }
           if (grepl("PESCADO", elemento)){
-         pescado = TRUE #Indicar que se está procesando pescado.
-         fruta = FALSE #Resetear la variable de procesamiento de fruta.
+         pescado = TRUE # Indicar que se está procesando pescado.
+         fruta = FALSE # Resetear la variable de procesamiento de fruta.
      }
      
    }
@@ -119,31 +120,31 @@ for (archivo in rutas){
    # Crear el dataframe principal con la información obtenida
    df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = telef[2], Fecha = partes[1],  OP = partes[2], Factura_simpl= id[[2]] , Productos = producto[0:length(producto)])
   
-  #Convertir el dataframe de formato ancho a formato largo:
+  # Convertir el dataframe de formato ancho a formato largo:
   df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "OP", "Factura_simpl")) 
 
-  #Agregar el dataframe actual al dataframe general:
+  # Agregar el dataframe actual al dataframe general:
   df_todos <- rbind(df_todos, df)
   total_columnas <- ncol(df)
   posicion <- total_columnas - 1
   df <- df[, -posicion]
   
-  #Cantidad:
-  df_productos <- select(df, 1,7, 8) #tenemos en cuenta el identificador ('Factura_simpl').
+  # Cantidad:
+  df_productos <- select(df, 1,7, 8) # tenemos en cuenta el identificador ('Factura_simpl').
   df_separado <- df_productos %>%
   mutate(Cantidad = substr(Productos, 1, 1))
   df_separado$Productos <- substr(df$Productos, 2, nchar(df$Productos))
   df_separado$Cantidad <- as.numeric(df_separado$Cantidad)
   
-  #Importe:
+  # Importe:
   df_separado$Importe <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", df_separado$Productos)
   df_separado$Importe <- gsub(",", ".", df_separado$Importe)
   df_separado$Importe <- as.numeric(df_separado$Importe)
   
-  #Precio por Unidad:
+  # Precio por Unidad:
   df_separado <- df_separado %>% mutate(PUnidad = Importe / Cantidad)
 
-  #Nombre del producto:
+  # Nombre del producto:
   df_separado$Nombre <- substr(df_separado$Productos, 
                              1, 
                              nchar(df_separado$Productos) - nchar(format(df_separado$Importe, nsmall = 2)) - 1)
@@ -151,7 +152,7 @@ for (archivo in rutas){
                                                         1, 
                                                         nchar(df_separado$Nombre[df_separado$Cantidad > 1]) - nchar(format(df_separado$PUnidad, nsmall = 2)) - 1)
 
-#Sobrescribir la columna Productos con sólo el nombre del producto:
+# Sobrescribir la columna Productos con sólo el nombre del producto:
   df_separado$Productos <- df_separado$Nombre
   
   
@@ -160,16 +161,16 @@ for (archivo in rutas){
   df_separado$Total_euros <- as.numeric(df_separado$Total_euros)
   df_separado$OP <- partes[2]
   
-  #Lo añadimos en el data frame conjunto:
+  # Lo añadimos en el data frame conjunto:
   df_productos_todos <- rbind(df_productos_todos, df_separado)
 
   
   if (fruta == TRUE & length(lista_fruta) != 0 ){
     df_fruta <- data.frame(Productos = character(), Info = character(), OP = character())
     indice <- length(lista_fruta) -1
-    i <- 1  #Inicializar el índice.
+    i <- 1  # Inicializar el índice.
   
-  #Bucle 'mientras' para creación de df_fruta:
+  # Bucle 'mientras' para creación de df_fruta:
   while (i <= indice) {
 
     df_fruta <- rbind(df_fruta, data.frame(Productos = lista_fruta[[i]], Info = lista_fruta[[i+1]], OP = partes[[2]]))
@@ -194,7 +195,7 @@ for (archivo in rutas){
     indice <- length(lista_pescado) -1
     i <- 1  # Inicializar el índice
   
-  #Bucle 'mientras' para creación de df_pescado:
+  # Bucle 'mientras' para creación de df_pescado:
   while (i <= indice) {
     df_pescado <- rbind(df_pescado, data.frame(Productos = lista_pescado[[i]], Info = lista_pescado[[i+1]], OP = partes[2]) )
     i <- i + 2  
@@ -216,26 +217,26 @@ for (archivo in rutas){
 ```
 
 ```{r}
-#En este momento de la Importación, realizaremos un DATAFRAME conjunto(df_tickets).
+# En este momento de la Importación, realizaremos un DATAFRAME conjunto(df_tickets).
 
 
-#Tenemos en cuenta el identificador de cada ticket, y además destacar
-#cada tipo de formado dentro de productos:fruta, pescado y productos restantes.
-#Fruta:
+# Tenemos en cuenta el identificador de cada ticket, y además destacar
+# cada tipo de formado dentro de productos:fruta, pescado y productos restantes.
+#F ruta:
 x_fruta <- df_fruta_todos$Productos 
-#Productos en general(sin fruta ni pescado), ya que tienen un formato != :
+# Productos en general(sin fruta ni pescado), ya que tienen un formato != :
 x_prod <- df_productos_todos$Productos
-#Pescados:
+# Pescados:
 x_pescado <- df_pescado_todos$Productos
-#Añadimos al vector de fruas, el vector de productos restantes,
-#mediante un append:
+# Añadimos al vector de fruas, el vector de productos restantes,
+# mediante un append:
 Productos <- append(x_fruta, x_prod)
 
-#Dataframe uniendo la fruta y los productos restantes,
-#mediante un full_join:
+# Dataframe uniendo la fruta y los productos restantes,
+# mediante un full_join:
 df_total <- full_join(df_fruta_todos, df_productos_todos, by="Productos")
 
-#Arreglamos el dataframe con el fotmato adecuado para las vbles correspondientes:
+# Arreglamos el dataframe con el fotmato adecuado para las vbles correspondientes:
 df_total <- df_total %>% mutate(Nombre_def = ifelse(is.na(Nombre.x), Nombre.y, Nombre.x)) %>% select(!c(Nombre.x, Nombre.y)) %>% mutate(Nombre= Nombre_def) %>%select(!Nombre_def)
 
 df_total <- df_total %>% mutate(Cantidad_def = ifelse(is.na(Cantidad.x), Cantidad.y, Cantidad.x)) %>% select(!c(Cantidad.x, Cantidad.y)) %>% mutate(Cantidad=Cantidad_def) %>% select(!Cantidad_def)
@@ -251,11 +252,11 @@ df_total <- df_total %>%
   select(-Factura_simpl_def)
 
 
-#Dataframe uniendo el df_total (fruta+productos) y los pescados,
-#mediante un full_join:
+# Dataframe uniendo el df_total (fruta+productos) y los pescados,
+# mediante un full_join:
 df_total_def <- full_join(df_total, df_pescado_todos, by="Productos")
 
-#Arreglamos el dataframe con el fotmato adecuado para las vbles correspondientes:
+# Arreglamos el dataframe con el fotmato adecuado para las variables correspondientes:
 df_total_def <- df_total_def %>% mutate(Nombre_def = ifelse(is.na(Nombre.x), Nombre.y, Nombre.x)) %>% select(!c(Nombre.x, Nombre.y)) %>% mutate(Nombre= Nombre_def) %>%select(!Nombre_def)
 
 df_total_def <- df_total_def %>% mutate(Importe_def = ifelse(is.na(Importe.x), Importe.y, Importe.x)) %>% select(!c(Importe.x, Importe.y))%>% mutate(Importe=Importe_def) %>% select(!Importe_def)
@@ -274,16 +275,16 @@ df_total_def <- df_total_def %>%
   mutate(Factura_simpl = Factura_simpl_def) %>%
   select(-Factura_simpl_def)
 
-#Hacemos el entorno amigable:
+# Hacemos el entorno amigable:
 df_calles <- df_todos  %>% select(!c(Producto,Productos,OP)) %>% mutate(nombre_super = Nombre)  %>% select(!Nombre) 
 
 df_calles <- unique(df_calles)
-df_calles$Fecha <- as.POSIXct(df_calles$Fecha, format = "%d/%m/%Y %H:%M") #Tener en cuenta el formato 'Fecha' correcto.
+df_calles$Fecha <- as.POSIXct(df_calles$Fecha, format = "%d/%m/%Y %H:%M") # Tener en cuenta el formato 'Fecha' correcto.
 
-#DATAFRAME OBJETIVO (final), con la información de todos los productos de 
-#cada ticket, incluidos la fruta y los pescados,
-#además de la información de cada supermercado:
-df_ticktes <- left_join(df_total_def,df_calles,by = "Factura_simpl")
+# DATAFRAME OBJETIVO (final), con la información de todos los productos de 
+# cada ticket, incluidos la fruta y los pescados,
+# además de la información de cada supermercado:
+df_tickets <- left_join(df_total_def,df_calles,by = "Factura_simpl")
 
 ```
 ## 4.Análisis Inicial de los datos.
