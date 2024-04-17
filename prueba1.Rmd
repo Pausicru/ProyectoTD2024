@@ -25,7 +25,7 @@ Primeramente, vamos a cargar todas las librerías necesarias en las diferentes f
 ```{r}
 # Este bloque se encarga de instalar los paquetes necesarios.
 
-packages = c("tidyverse","knitr","reshape2")
+packages = c("tidyverse","knitr","reshape2", "lubridate")
 package.check <- lapply(packages, FUN = function(x) {
   if (!require(x, character.only = TRUE)) {
     install.packages(x, dependencies = TRUE,repos='http://cran.rediris.es')
@@ -279,7 +279,10 @@ df_total_def <- df_total_def %>%
 df_calles <- df_todos  %>% select(!c(Producto,Productos,OP)) %>% mutate(nombre_super = Nombre)  %>% select(!Nombre) 
 
 df_calles <- unique(df_calles)
-df_calles$Fecha <- as.POSIXct(df_calles$Fecha, format = "%d/%m/%Y %H:%M") # Tener en cuenta el formato 'Fecha' correcto.
+ # Tener en cuenta el formato 'Fecha' correcto.
+df_calles <- separate(df_calles, Fecha, into = c("Fecha", "Hora"), sep = " ")
+df_calles$Hora <- hms(df_calles$Hora)
+
 
 # DATAFRAME OBJETIVO (final), con la información de todos los productos de 
 # cada ticket, incluidos la fruta y los pescados,
@@ -338,6 +341,13 @@ Visualmente se pueden detectar mediante un `boxplot()`.
 ```{r}
 # 1. ¿Influye la hora de compra con la cantidad de productos comprados?, y por consiguiente, ¿influye en el precio total?
 
+# Hacemos intervalos
+intervalos <- seq(from = as.POSIXct("09:00:00", format = "%H:%M:%S"), to = as.POSIXct("21:30:00", format = "%H:%M:%S"), by = "4 hours")
+df_int <- as.data.frame(intervalos)
+df_int2 <- separate(df_int, intervalos, into = c("Fecha", "Hora"), sep = " ")
+df_int2<- select(df_int2, -Fecha)
+
+```
 
 # 2. ¿Qué productos tienen la mayor variabilidad en los precios? Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos? ¿Los precios de los productos se mantienen en todos los supermercados?
 
