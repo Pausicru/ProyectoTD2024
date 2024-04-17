@@ -339,31 +339,14 @@ Visualmente se pueden detectar mediante un `boxplot()`.
 # 1. ¿Influye la hora de compra con la cantidad de productos comprados?, y por consiguiente, ¿influye en el precio total?
 
 
-# 2. Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos?
+# 2. ¿Qué productos tienen la mayor variabilidad en los precios? Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos? ¿Los precios de los productos se mantienen en todos los supermercados?
 
 
-# 3.¿Existe algún producto que siempre o casi siempre se consuma?
+# 3. ¿Existe algún producto que siempre o casi siempre se consuma?
 
 
-# 4.¿Los precios de los productos se mantienen en todos los supermercados?
+# 4. ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
 
-
-# 5. ¿Cuáles son los productos que se suelen comprar juntos?
-
-
-# 6. ¿Cómo varía la composición del carrito de compras según el día de la semana?
-
-
-# 7. ¿Qué productos tienen la mayor variabilidad en los precios?
-
-
-# 8. ¿Qué categorías de productos contribuyen más al gasto total?
-
-
-# 9. ¿Qué porcentaje del gasto total se destina a productos frescos en comparación con productos envasados o procesados?
-
-
-#10. ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
 ```
 
 
