@@ -391,7 +391,7 @@ Visualmente se pueden detectar mediante un `boxplot()`.
 # 1. ¿Influye la hora de compra con el número de tickets en esos intervalos de tiempo?
 #, y por consiguiente, ¿influye en el precio total?
 
-#FALTA ORDENAR EN ORDEN CRECIENTE LOS INTERVALOS (NEREA).
+#FALTA ORDENAR EN ORDEN CRECIENTE LOS INTERVALOS.
 #Creamos los intervalos de tiempo:
 intervalos <- seq(from = as.POSIXct("09:00", format = "%H:%M"), 
                   to = as.POSIXct("21:30", format = "%H:%M"), 
@@ -465,16 +465,10 @@ df_productos_todos %>% group_by(Productos) %>% summarise(contador =  n())  %>%
 
 
 ```{r}
-# 4. ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
+# 4. ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes
+     #que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
 
-
-
-
-
-
-
-
-
+ 
 
 
 
