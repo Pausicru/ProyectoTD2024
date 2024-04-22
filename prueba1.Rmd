@@ -108,20 +108,26 @@ for (archivo in rutas){
      if (enc == TRUE){
        final <- c(final, elemento) # Añadir elemento a la lista de información final.
      }
-          if (grepl("PESCADO", elemento)){
+     if (grepl("PESCADO", elemento)){
          pescado = TRUE # Indicar que se está procesando pescado.
          fruta = FALSE # Resetear la variable de procesamiento de fruta.
      }
+
      
    }
+   if (parking == TRUE){
+       parkingl <- "SI"
+     }else{
+       parkingl <- "NO"
+     }
    partes <- strsplit(x[5], " OP: ")[[1]]
    id <- strsplit(x[6], "FACTURA SIMPLIFICADA: ")[[1]]
    telef <- strsplit(x[4], "TELÉFONO: ")[[1]]
    # Crear el dataframe principal con la información obtenida
-   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = telef[2], Fecha = partes[1],  OP = partes[2], Factura_simpl= id[[2]] , Productos = producto[0:length(producto)])
+   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = telef[2], Fecha = partes[1],  OP = partes[2], Factura_simpl= id[[2]], Parking = parkingl, Productos = producto[0:length(producto)])
   
   # Convertir el dataframe de formato ancho a formato largo:
-  df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "OP", "Factura_simpl")) 
+  df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "OP", "Factura_simpl", "Parking")) 
 
   # Agregar el dataframe actual al dataframe general:
   df_todos <- rbind(df_todos, df)
@@ -130,7 +136,7 @@ for (archivo in rutas){
   df <- df[, -posicion]
   
   # Cantidad:
-  df_productos <- select(df, 1,7, 8) # tenemos en cuenta el identificador ('Factura_simpl').
+  df_productos <- select(df, 1, 7, 9) # tenemos en cuenta el identificador ('Factura_simpl').
   df_separado <- df_productos %>%
   mutate(Cantidad = substr(Productos, 1, 1))
   df_separado$Productos <- substr(df$Productos, 2, nchar(df$Productos))
@@ -145,12 +151,12 @@ for (archivo in rutas){
   df_separado <- df_separado %>% mutate(PUnidad = Importe / Cantidad)
 
   # Nombre del producto:
-  df_separado$Nombre <- substr(df_separado$Productos, 
-                             1, 
-                             nchar(df_separado$Productos) - nchar(format(df_separado$Importe, nsmall = 2)) - 1)
-  df_separado$Nombre[df_separado$Cantidad > 1] <- substr(df_separado$Nombre[df_separado$Cantidad > 1], 
-                                                        1, 
-                                                        nchar(df_separado$Nombre[df_separado$Cantidad > 1]) - nchar(format(df_separado$PUnidad, nsmall = 2)) - 1)
+
+# Creamos una nueva columna "Nombre" con la parte de la columna "Productos" correspondiente al nombre del producto
+df_separado$Nombre <- substr(df_separado$Productos, 1, nchar(df_separado$Productos) - 4 - 1)
+
+# Si la cantidad es mayor que 1, ajustamos la columna "Nombre" eliminando la parte correspondiente al precio unitario
+df_separado$Nombre[df_separado$Cantidad > 1] <- substr(df_separado$Nombre[df_separado$Cantidad > 1], 1, nchar(df_separado$Nombre[df_separado$Cantidad > 1]) - 4 - 1)
 
 # Sobrescribir la columna Productos con sólo el nombre del producto:
   df_separado$Productos <- df_separado$Nombre
@@ -160,6 +166,7 @@ for (archivo in rutas){
   df_separado$Total_euros <- gsub(",", ".", df_separado$Total_euros)
   df_separado$Total_euros <- as.numeric(df_separado$Total_euros)
   df_separado$OP <- partes[2]
+  df_separado$Parking <- parkingl
   
   # Lo añadimos en el data frame conjunto:
   df_productos_todos <- rbind(df_productos_todos, df_separado)
@@ -186,6 +193,9 @@ for (archivo in rutas){
     df_fruta$Importe <- as.numeric(df_fruta$Importe)
     df_fruta$Kgs <- as.numeric(df_fruta$Kgs)
     df_fruta$Factura_simpl <- id[[2]]
+    df_fruta$Total_euros <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", final[1])
+    df_fruta$Total_euros <- gsub(",", ".", df_fruta$Total_euros)
+    df_fruta$Total_euros <- as.numeric(df_fruta$Total_euros)
     df_fruta <- df_fruta %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
     df_fruta_todos <- rbind(df_fruta_todos, df_fruta)
    
@@ -208,6 +218,9 @@ for (archivo in rutas){
     df_pescado$Kgs <- gsub(",", ".", df_pescado$Kgs)
     df_pescado$Importe <- as.numeric(df_pescado$Importe)
     df_pescado$Kgs <- as.numeric(df_pescado$Kgs)
+    df_pescado$Total_euros <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", final[1])
+    df_pescado$Total_euros <- gsub(",", ".", df_pescado$Total_euros)
+    df_pescado$Total_euros <- as.numeric(df_pescado$Total_euros)
     df_pescado <- df_pescado %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
     df_pescado$Factura_simpl <- id[[2]]
     df_pescado_todos <- rbind(df_pescado_todos, df_pescado)
@@ -251,6 +264,7 @@ df_total <- df_total %>%
   mutate(Factura_simpl = Factura_simpl_def) %>%
   select(-Factura_simpl_def)
 
+df_total <- df_total %>% mutate(Total_euros_def = ifelse(is.na(Total_euros.x), Total_euros.y, Total_euros.x)) %>% select(!c(Total_euros.x, Total_euros.y)) %>% mutate(Total_euros=Total_euros_def) %>% select(!Total_euros_def)
 
 # Dataframe uniendo el df_total (fruta+productos) y los pescados,
 # mediante un full_join:
@@ -269,11 +283,15 @@ df_total_def <- df_total_def %>% mutate(Eur_el_Kg_def = ifelse(is.na(Eur_el_Kg.x
 
 df_total_def <- df_total_def %>% mutate(Info_def = ifelse(is.na(Info.x), Info.y, Info.x)) %>% select(!c(Info.x, Info.y)) %>% mutate(Info=Info_def) %>% select(!Info_def)
 
+
+
 df_total_def <- df_total_def %>%
   mutate(Factura_simpl_def = ifelse(is.na(Factura_simpl.y), Factura_simpl.x, Factura_simpl.y)) %>%
   select(-c(Factura_simpl.y, Factura_simpl.x)) %>%
   mutate(Factura_simpl = Factura_simpl_def) %>%
   select(-Factura_simpl_def)
+
+df_total_def <- df_total_def %>% mutate(Total_euros_def = ifelse(is.na(Total_euros.x), Total_euros.y, Total_euros.x)) %>% select(!c(Total_euros.x, Total_euros.y)) %>% mutate(Total_euros=Total_euros_def) %>% select(!Total_euros_def)
 
 # Hacemos el entorno amigable:
 df_calles <- df_todos  %>% select(!c(Producto,Productos,OP)) %>% mutate(nombre_super = Nombre)  %>% select(!Nombre) 
@@ -281,13 +299,14 @@ df_calles <- df_todos  %>% select(!c(Producto,Productos,OP)) %>% mutate(nombre_s
 df_calles <- unique(df_calles)
  # Tener en cuenta el formato 'Fecha' correcto.
 df_calles <- separate(df_calles, Fecha, into = c("Fecha", "Hora"), sep = " ")
-df_calles$Hora <- hms(df_calles$Hora)
+df_calles$Hora <- hm(df_calles$Hora)
 
 
 # DATAFRAME OBJETIVO (final), con la información de todos los productos de 
 # cada ticket, incluidos la fruta y los pescados,
 # además de la información de cada supermercado:
 df_tickets <- left_join(df_total_def,df_calles,by = "Factura_simpl")
+df_tickets <- df_tickets %>% mutate(Parking_def = ifelse(is.na(Parking.x), Parking.y, Parking.x)) %>% select(!c(Parking.x, Parking.y)) %>% mutate(Parking=Parking_def) %>% select(!Parking_def)
 
 ```
 ## 4.Análisis Inicial de los datos.
@@ -346,6 +365,7 @@ intervalos <- seq(from = as.POSIXct("09:00:00", format = "%H:%M:%S"), to = as.PO
 df_int <- as.data.frame(intervalos)
 df_int2 <- separate(df_int, intervalos, into = c("Fecha", "Hora"), sep = " ")
 df_int2<- select(df_int2, -Fecha)
+#df_int2$Hora <- hms(df_int2$Hora)
 
 ```
 
