@@ -4,7 +4,7 @@ output:
   pdf_document: default
   html_document: default
 date: "2024-03-26"
-authors: Marta Molina, Iñaki Martín, Nerea Galera, Sergio Mut
+authors: Marta Molina, Iñaki Martín, Nerea Galera, Sergio Mut, Paula Sigüenza
 ---
 
 ```{r setup, include=FALSE}
@@ -427,8 +427,6 @@ reglapercentil <- function(x){
   }
 ```
 
-
-
 ```{r}
 metodos <- list(reglasigma=reglasigma,reglahampel=reglahampel,reglaboxplot=reglaboxplot,reglapercentil=reglapercentil)
 
@@ -582,7 +580,7 @@ df_productos_todos %>% group_by(Nombre) %>% summarise(contador =  n())  %>%
         caption = "Los datos han sido extraídos de tickets de Mercadona")
 ```
 
-
+##Gráfica Correlación:
 ```{r}
 
 df_productos_todos %>% group_by(Factura_simpl, Total_euros) %>% summarise(contador = n()) %>% ggplot(aes(x = contador, y = Total_euros)) +
