@@ -427,14 +427,19 @@ reglapercentil <- function(x){
   }
 ```
 
+
+
+
 ```{r}
+#Creamos una lista de funciones de detección de outliers:
 metodos <- list(reglasigma=reglasigma,reglahampel=reglahampel,reglaboxplot=reglaboxplot,reglapercentil=reglapercentil)
 
-df_tickets %>% select(Total_euros) %>% mutate(across(where(is.numeric), metodos))
-
+#Aplicamoslos métodos de detección de outliers a las columnas numéricas del dataframe:
+df_tickets <- df_tickets %>% select(Total_euros) %>% mutate(across(where(is.numeric), metodos))
 
 #Número de outliers detectados:
-df_tickets %>% select(contains("regla")) %>% summarise(across(everything(), ~sum(.,na.rm = T)))
+num_outliers <- df_tickets %>% select(contains("regla")) %>% summarise(across(everything(),~sum(.,na.rm = TRUE))) 
+
 
 #Valores etiquetados como outliers:
 sort(df_tickets$Total_euros[df_tickets$Total_euros_reglasigma])
@@ -443,9 +448,12 @@ sort(df_tickets$Total_euros[df_tickets$Total_euros_reglaboxplot])
 sort(df_tickets$Total_euros[df_tickets$Total_euros_reglapercentil])
 
 #Graficamos:
-df_tickets %>%
+ df_tickets %>%
 pivot_longer(cols = contains("regla"), names_to = "regla", values_to = "outliers")%>%
-ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point(position = 'jitter')#mejoramos la legibilidad del gráfico.
+ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point(position = 'jitter') +
+  labs(title = "Número de outliers detectados por método",
+       x = "Método de detección de outliers",
+       y = "Número de outliers")
 ```
 
 
