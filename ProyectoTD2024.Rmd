@@ -308,6 +308,10 @@ df_tickets <- df_total_def %>% mutate(Parking_def = ifelse(is.na(Parking.x), Par
 df_tickets$Parking <- as.factor(df_tickets$Parking)
 
 #Hacemos el entorno amigable:
+```
+
+
+```{r}
 df_calles <- df_tickets %>% select(!c(Productos,Info,Eur_el_Kg,Kgs,Importe,Nombre,OP, Cantidad, PUnidad))
 df_calles <- unique(df_calles)
 
@@ -372,14 +376,8 @@ En nuestro caso, no constan.
 
 ## 5.1.Detección de NA's:
 
-Primero haremos un recuento de NA's del dataframe objetivo con la función 
-`is.na()` , dado que son valores lógicos sumaremos la cantidad total. 
-En el caso de que haya presencia de NA's utilizaremos la función `apply()` 
-para contar NA´s a lo largo de filas o columnas.
+Estarán explicados y justificados en la memoria.
 
-```{r}
-
-```
 ## 5.2.Detección de Outliers:
 Un outlier es una observación (o conjunto de observaciones) que divergen
 del patrón de comportamiento del resto de datos, es decir, presentan una
@@ -387,6 +385,72 @@ desviación respecto de la distribución de los datos.
 Para su detección contamos con 4 métodos: `reglasigma(x)`, `reglahampel(x)`,
 `reglaboxplot(x)` y `reglapercentil(x)`.
 Visualmente se pueden detectar mediante un `boxplot()`.
+
+```{r}
+madm <- function(x, na.rm=T) { 
+  aux1 = median(x,na.rm = TRUE)
+  aux2 = x-aux1
+  aux3 = abs(aux2)
+  aux4 = median(aux3,na.rm = TRUE)
+  aux5 = 1.4826*aux4
+  return(aux5)
+}
+
+# Regla 3 sigma:
+reglasigma <- function(x) { 
+  m <- mean(x,na.rm = T)
+  s <- sd(x,na.rm = T)
+  out <- (x>(m+3*s)|x<(m-3*s))
+}
+
+
+# Identificador Hampel:
+reglahampel <- function(x) { 
+  m <- median(x,na.rm = T)
+  s <- madm(x,na.rm = T)
+  out <- (x>(m+3*s)|x<(m-3*s))
+}
+
+# Regla boxplot:
+reglaboxplot <- function(x) { 
+  q1 <- quantile(x, 1 / 4, na.rm = T)
+  q2 <- quantile(x, 3 / 4, na.rm = T)
+  i <- IQR(x, na.rm = T)
+  out <- (x>(q2+1.5*i)|x<(q1-1.5*i))
+}
+
+# Percentiles:
+reglapercentil <- function(x){ 
+  q1 <- quantile(x, 0.05, na.rm = T)
+  q2 <- quantile(x, 0.95, na.rm = T)
+  out <- (x>q2|x<q1)
+  }
+```
+
+
+
+```{r}
+metodos <- list(reglasigma=reglasigma,reglahampel=reglahampel,reglaboxplot=reglaboxplot,reglapercentil=reglapercentil)
+
+df_tickets %>% select(Total_euros) %>% mutate(across(where(is.numeric), metodos))
+
+
+#Número de outliers detectados:
+df_tickets %>% select(contains("regla")) %>% summarise(across(everything(), ~sum(.,na.rm = T)))
+
+#Valores etiquetados como outliers:
+sort(df_tickets$Total_euros[df_tickets$Total_euros_reglasigma])
+sort(df_tickets$Total_euros[df_tickets$Total_euros_reglahampel])
+sort(df_tickets$Total_euros[df_tickets$Total_euros_reglaboxplot])
+sort(df_tickets$Total_euros[df_tickets$Total_euros_reglapercentil])
+
+#Graficamos:
+df_tickets %>%
+pivot_longer(cols = contains("regla"), names_to = "regla", values_to = "outliers")%>%
+ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point(position = 'jitter')#mejoramos la legibilidad del gráfico.
+```
+
+
 
 ## 6.Preguntas planteadas con sus respectivas Visualizaciones.
 
@@ -513,9 +577,9 @@ df_productos_todos %>% group_by(Nombre) %>% summarise(contador =  n())  %>%
  df_calles %>% group_by(COD_Postal)  %>% summarise(contador =  n(), avg = mean(Total_euros)) %>% ggplot(aes(x=COD_Postal, y= contador, fill = COD_Postal)) +  geom_bar(stat="identity") +
        labs(title = "Gráfica 5",
        subtitle = "Relación entre la población y el número de tickets",
-        x = "Población",
-       y = "Cantidad de tickets",
-       caption = "Los datos han sido extraídos de tickets de Mercadona")
+        x = "Código Postal",
+        y = "Cantidad de tickets",
+        caption = "Los datos han sido extraídos de tickets de Mercadona")
 ```
 
 
@@ -525,9 +589,9 @@ df_productos_todos %>% group_by(Factura_simpl, Total_euros) %>% summarise(contad
   geom_point() + # Añadir puntos
   geom_smooth(method = "lm", se = FALSE) + # Añadir línea de regresión
   labs(title = "Correlación entre Cantidad y Total Euros", 
-       x = "Cantidad", y = "Total Euros") + # Etiquetas de los ejes
-  theme_minimal()
+       x = "Cantidad", y = "Total Euros") 
 ```
+
 
 
 
