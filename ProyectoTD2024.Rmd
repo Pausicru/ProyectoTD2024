@@ -1,8 +1,10 @@
 ---
 title: "ProyectoTD2024"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 date: "2024-03-26"
-authors: "Marta Molina, Iñaki Martín, Nerea Galera, Sergio Mut"
+authors: Marta Molina, Iñaki Martín, Nerea Galera, Sergio Mut, Paula Sigüenza
 ---
 
 ```{r setup, include=FALSE}
@@ -108,20 +110,26 @@ for (archivo in rutas){
      if (enc == TRUE){
        final <- c(final, elemento) # Añadir elemento a la lista de información final.
      }
-          if (grepl("PESCADO", elemento)){
+     if (grepl("PESCADO", elemento)){
          pescado = TRUE # Indicar que se está procesando pescado.
          fruta = FALSE # Resetear la variable de procesamiento de fruta.
      }
+
      
    }
+   if (parking == TRUE){
+       parkingl <- "SI"
+     }else{
+       parkingl <- "NO"
+     }
    partes <- strsplit(x[5], " OP: ")[[1]]
    id <- strsplit(x[6], "FACTURA SIMPLIFICADA: ")[[1]]
    telef <- strsplit(x[4], "TELÉFONO: ")[[1]]
    # Crear el dataframe principal con la información obtenida
-   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = telef[2], Fecha = partes[1],  OP = partes[2], Factura_simpl= id[[2]] , Productos = producto[0:length(producto)])
+   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = telef[2], Fecha = partes[1],  OP = partes[2], Factura_simpl= id[[2]], Parking = parkingl, Productos = producto[0:length(producto)])
   
   # Convertir el dataframe de formato ancho a formato largo:
-  df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "OP", "Factura_simpl")) 
+  df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "OP", "Factura_simpl", "Parking")) 
 
   # Agregar el dataframe actual al dataframe general:
   df_todos <- rbind(df_todos, df)
@@ -130,7 +138,7 @@ for (archivo in rutas){
   df <- df[, -posicion]
   
   # Cantidad:
-  df_productos <- select(df, 1,7, 8) # tenemos en cuenta el identificador ('Factura_simpl').
+  df_productos <- select(df, 1, 7, 9) # tenemos en cuenta el identificador ('Factura_simpl').
   df_separado <- df_productos %>%
   mutate(Cantidad = substr(Productos, 1, 1))
   df_separado$Productos <- substr(df$Productos, 2, nchar(df$Productos))
@@ -145,12 +153,12 @@ for (archivo in rutas){
   df_separado <- df_separado %>% mutate(PUnidad = Importe / Cantidad)
 
   # Nombre del producto:
-  df_separado$Nombre <- substr(df_separado$Productos, 
-                             1, 
-                             nchar(df_separado$Productos) - nchar(format(df_separado$Importe, nsmall = 2)) - 1)
-  df_separado$Nombre[df_separado$Cantidad > 1] <- substr(df_separado$Nombre[df_separado$Cantidad > 1], 
-                                                        1, 
-                                                        nchar(df_separado$Nombre[df_separado$Cantidad > 1]) - nchar(format(df_separado$PUnidad, nsmall = 2)) - 1)
+
+# Creamos una nueva columna "Nombre" con la parte de la columna "Productos" correspondiente al nombre del producto
+df_separado$Nombre <- substr(df_separado$Productos, 1, nchar(df_separado$Productos) - 4 - 1)
+
+# Si la cantidad es mayor que 1, ajustamos la columna "Nombre" eliminando la parte correspondiente al precio unitario
+df_separado$Nombre[df_separado$Cantidad > 1] <- substr(df_separado$Nombre[df_separado$Cantidad > 1], 1, nchar(df_separado$Nombre[df_separado$Cantidad > 1]) - 4 - 1)
 
 # Sobrescribir la columna Productos con sólo el nombre del producto:
   df_separado$Productos <- df_separado$Nombre
@@ -160,6 +168,7 @@ for (archivo in rutas){
   df_separado$Total_euros <- gsub(",", ".", df_separado$Total_euros)
   df_separado$Total_euros <- as.numeric(df_separado$Total_euros)
   df_separado$OP <- partes[2]
+  df_separado$Parking <- parkingl
   
   # Lo añadimos en el data frame conjunto:
   df_productos_todos <- rbind(df_productos_todos, df_separado)
@@ -177,7 +186,7 @@ for (archivo in rutas){
     i <- i + 2  
   }
     df_fruta <- df_fruta %>%
-    mutate(Cantidad = substr(Productos, 1, 1))
+    mutate(Cantidad = as.numeric(substr(Productos, 1, 1)))
     df_fruta$Nombre <- substr(df_fruta$Productos, 2, nchar(df_fruta$Productos))
     df_fruta$Importe <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", df_fruta$Info)
     df_fruta$Kgs <- sub("^(\\d+[,.]\\d+).*", "\\1", df_fruta$Info)
@@ -186,6 +195,9 @@ for (archivo in rutas){
     df_fruta$Importe <- as.numeric(df_fruta$Importe)
     df_fruta$Kgs <- as.numeric(df_fruta$Kgs)
     df_fruta$Factura_simpl <- id[[2]]
+    df_fruta$Total_euros <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", final[1])
+    df_fruta$Total_euros <- gsub(",", ".", df_fruta$Total_euros)
+    df_fruta$Total_euros <- as.numeric(df_fruta$Total_euros)
     df_fruta <- df_fruta %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
     df_fruta_todos <- rbind(df_fruta_todos, df_fruta)
    
@@ -208,6 +220,9 @@ for (archivo in rutas){
     df_pescado$Kgs <- gsub(",", ".", df_pescado$Kgs)
     df_pescado$Importe <- as.numeric(df_pescado$Importe)
     df_pescado$Kgs <- as.numeric(df_pescado$Kgs)
+    df_pescado$Total_euros <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", final[1])
+    df_pescado$Total_euros <- gsub(",", ".", df_pescado$Total_euros)
+    df_pescado$Total_euros <- as.numeric(df_pescado$Total_euros)
     df_pescado <- df_pescado %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
     df_pescado$Factura_simpl <- id[[2]]
     df_pescado_todos <- rbind(df_pescado_todos, df_pescado)
@@ -251,6 +266,7 @@ df_total <- df_total %>%
   mutate(Factura_simpl = Factura_simpl_def) %>%
   select(-Factura_simpl_def)
 
+df_total <- df_total %>% mutate(Total_euros_def = ifelse(is.na(Total_euros.x), Total_euros.y, Total_euros.x)) %>% select(!c(Total_euros.x, Total_euros.y)) %>% mutate(Total_euros=Total_euros_def) %>% select(!Total_euros_def)
 
 # Dataframe uniendo el df_total (fruta+productos) y los pescados,
 # mediante un full_join:
@@ -269,26 +285,65 @@ df_total_def <- df_total_def %>% mutate(Eur_el_Kg_def = ifelse(is.na(Eur_el_Kg.x
 
 df_total_def <- df_total_def %>% mutate(Info_def = ifelse(is.na(Info.x), Info.y, Info.x)) %>% select(!c(Info.x, Info.y)) %>% mutate(Info=Info_def) %>% select(!Info_def)
 
+
+
 df_total_def <- df_total_def %>%
   mutate(Factura_simpl_def = ifelse(is.na(Factura_simpl.y), Factura_simpl.x, Factura_simpl.y)) %>%
   select(-c(Factura_simpl.y, Factura_simpl.x)) %>%
   mutate(Factura_simpl = Factura_simpl_def) %>%
   select(-Factura_simpl_def)
 
-# Hacemos el entorno amigable:
+df_total_def <- df_total_def %>% mutate(Total_euros_def = ifelse(is.na(Total_euros.x), Total_euros.y, Total_euros.x)) %>% select(!c(Total_euros.x, Total_euros.y)) %>% mutate(Total_euros=Total_euros_def) %>% select(!Total_euros_def)
+
+#Hacemos el entorno amigable:
 df_calles <- df_todos  %>% select(!c(Producto,Productos,OP)) %>% mutate(nombre_super = Nombre)  %>% select(!Nombre) 
 
 df_calles <- unique(df_calles)
- # Tener en cuenta el formato 'Fecha' correcto.
+
+#DATAFRAME OBJETIVO (final), con la información de todos los productos de
+#cada ticket, incluidos la fruta y los pescados,
+#además de la información de cada supermercado:
+df_total_def <- left_join(df_total_def,df_calles,by = "Factura_simpl")
+df_tickets <- df_total_def %>% mutate(Parking_def = ifelse(is.na(Parking.x), Parking.y, Parking.x)) %>% select(!c(Parking.x, Parking.y)) %>% mutate(Parking=Parking_def) %>% select(!Parking_def)
+df_tickets$Parking <- as.factor(df_tickets$Parking)
+
+#Hacemos el entorno amigable:
+```
+
+
+```{r}
+df_calles <- df_tickets %>% select(!c(Productos,Info,Eur_el_Kg,Kgs,Importe,Nombre,OP, Cantidad, PUnidad))
+df_calles <- unique(df_calles)
+
+#Tener en cuenta el formato 'Fecha' correcto.
 df_calles <- separate(df_calles, Fecha, into = c("Fecha", "Hora"), sep = " ")
-df_calles$Hora <- hms(df_calles$Hora)
+#df_calles$Hora <- hm(df_calles$Hora)
 
 
-# DATAFRAME OBJETIVO (final), con la información de todos los productos de 
-# cada ticket, incluidos la fruta y los pescados,
-# además de la información de cada supermercado:
-df_tickets <- left_join(df_total_def,df_calles,by = "Factura_simpl")
+df_fruta_pescados <- full_join(df_fruta_todos, df_pescado_todos, by = "Productos" )
 
+# Arreglamos el dataframe con el fotmato adecuado para las vbles correspondientes:
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Nombre_def = ifelse(is.na(Nombre.x), Nombre.y, Nombre.x)) %>% select(!c(Nombre.x, Nombre.y)) %>% mutate(Nombre= Nombre_def) %>%select(!Nombre_def)
+
+df_fruta_pescados <- df_fruta_pescados%>% mutate(Importe_def = ifelse(is.na(Importe.x), Importe.y, Importe.x)) %>% select(!c(Importe.x, Importe.y))%>% mutate(Importe=Importe_def) %>% select(!Importe_def)
+
+df_fruta_pescados<- df_fruta_pescados %>% mutate(OP_def = ifelse(is.na(OP.x), OP.y, OP.x)) %>% select(!c(OP.x, OP.y))%>% mutate(OP=OP_def) %>% select(!OP_def)
+
+df_fruta_pescados <-df_fruta_pescados %>%
+  mutate(Factura_simpl_def = ifelse(is.na(Factura_simpl.y), Factura_simpl.x, Factura_simpl.y)) %>%
+  select(-c(Factura_simpl.y, Factura_simpl.x)) %>%
+  mutate(Factura_simpl = Factura_simpl_def) %>%
+  select(-Factura_simpl_def)
+
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Total_euros_def = ifelse(is.na(Total_euros.x), Total_euros.y, Total_euros.x)) %>% select(!c(Total_euros.x, Total_euros.y)) %>% mutate(Total_euros=Total_euros_def) %>% select(!Total_euros_def)
+
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Eur_el_Kg_def = ifelse(is.na(Eur_el_Kg.x), Eur_el_Kg.y, Eur_el_Kg.x)) %>% select(!c(Eur_el_Kg.x, Eur_el_Kg.y)) %>% mutate(Eur_el_Kg=Eur_el_Kg_def) %>% select(!Eur_el_Kg_def)
+
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Info_def = ifelse(is.na(Info.x), Info.y, Info.x)) %>% select(!c(Info.x, Info.y)) %>% mutate(Info=Info_def) %>% select(!Info_def)
+
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Kgs_def = ifelse(is.na(Kgs.x),Kgs.y, Kgs.x)) %>% select(!c(Kgs.x, Kgs.y)) %>% mutate(Kgs= Kgs_def) %>%select(!Kgs_def)
+
+df_calles <- separate(df_calles, Municipio, into = c("COD_Postal", "Municipio"), sep = " ")
 ```
 ## 4.Análisis Inicial de los datos.
 
@@ -321,14 +376,8 @@ En nuestro caso, no constan.
 
 ## 5.1.Detección de NA's:
 
-Primero haremos un recuento de NA's del dataframe objetivo con la función 
-`is.na()` , dado que son valores lógicos sumaremos la cantidad total. 
-En el caso de que haya presencia de NA's utilizaremos la función `apply()` 
-para contar NA´s a lo largo de filas o columnas.
+Estarán explicados y justificados en la memoria.
 
-```{r}
-
-```
 ## 5.2.Detección de Outliers:
 Un outlier es una observación (o conjunto de observaciones) que divergen
 del patrón de comportamiento del resto de datos, es decir, presentan una
@@ -337,26 +386,220 @@ Para su detección contamos con 4 métodos: `reglasigma(x)`, `reglahampel(x)`,
 `reglaboxplot(x)` y `reglapercentil(x)`.
 Visualmente se pueden detectar mediante un `boxplot()`.
 
-## 6.Preguntas planteadas con sus respectivas Visualizaciones.
 ```{r}
-# 1. ¿Influye la hora de compra con la cantidad de productos comprados?, y por consiguiente, ¿influye en el precio total?
+madm <- function(x, na.rm=T) { 
+  aux1 = median(x,na.rm = TRUE)
+  aux2 = x-aux1
+  aux3 = abs(aux2)
+  aux4 = median(aux3,na.rm = TRUE)
+  aux5 = 1.4826*aux4
+  return(aux5)
+}
 
-# Hacemos intervalos
-intervalos <- seq(from = as.POSIXct("09:00:00", format = "%H:%M:%S"), to = as.POSIXct("21:30:00", format = "%H:%M:%S"), by = "4 hours")
-df_int <- as.data.frame(intervalos)
-df_int2 <- separate(df_int, intervalos, into = c("Fecha", "Hora"), sep = " ")
-df_int2<- select(df_int2, -Fecha)
+# Regla 3 sigma:
+reglasigma <- function(x) { 
+  m <- mean(x,na.rm = T)
+  s <- sd(x,na.rm = T)
+  out <- (x>(m+3*s)|x<(m-3*s))
+}
+
+
+# Identificador Hampel:
+reglahampel <- function(x) { 
+  m <- median(x,na.rm = T)
+  s <- madm(x,na.rm = T)
+  out <- (x>(m+3*s)|x<(m-3*s))
+}
+
+# Regla boxplot:
+reglaboxplot <- function(x) { 
+  q1 <- quantile(x, 1 / 4, na.rm = T)
+  q2 <- quantile(x, 3 / 4, na.rm = T)
+  i <- IQR(x, na.rm = T)
+  out <- (x>(q2+1.5*i)|x<(q1-1.5*i))
+}
+
+# Percentiles:
+reglapercentil <- function(x){ 
+  q1 <- quantile(x, 0.05, na.rm = T)
+  q2 <- quantile(x, 0.95, na.rm = T)
+  out <- (x>q2|x<q1)
+  }
+```
+
+
+
+
+```{r}
+#Creamos una lista de funciones de detección de outliers:
+metodos <- list(reglasigma=reglasigma,reglahampel=reglahampel,reglaboxplot=reglaboxplot,reglapercentil=reglapercentil)
+
+#Aplicamoslos métodos de detección de outliers a las columnas numéricas del dataframe:
+df_tickets <- df_tickets %>% select(Total_euros) %>% mutate(across(where(is.numeric), metodos))
+
+#Número de outliers detectados:
+num_outliers <- df_tickets %>% select(contains("regla")) %>% summarise(across(everything(),~sum(.,na.rm = TRUE))) 
+
+
+#Valores etiquetados como outliers:
+sort(df_tickets$Total_euros[df_tickets$Total_euros_reglasigma])
+sort(df_tickets$Total_euros[df_tickets$Total_euros_reglahampel])
+sort(df_tickets$Total_euros[df_tickets$Total_euros_reglaboxplot])
+sort(df_tickets$Total_euros[df_tickets$Total_euros_reglapercentil])
+
+#Graficamos:
+ df_tickets %>%
+pivot_longer(cols = contains("regla"), names_to = "regla", values_to = "outliers")%>%
+ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point(position = 'jitter') +
+  labs(title = "Número de outliers detectados por método",
+       x = "Método de detección de outliers",
+       y = "Número de outliers")
+```
+
+
+
+## 6.Preguntas planteadas con sus respectivas Visualizaciones.
+
+
+```{r}
+# 1. ¿Influye la hora de compra con el número de tickets en esos intervalos de tiempo?
+#, y por consiguiente, ¿influye en el precio total?
+
+#FALTA ORDENAR EN ORDEN CRECIENTE LOS INTERVALOS.
+#Creamos los intervalos de tiempo:
+intervalos <- seq(from = as.POSIXct("09:00", format = "%H:%M"), 
+                  to = as.POSIXct("21:30", format = "%H:%M"), 
+                  by = "4 hours")
+
+#Define los límites de los intervalos
+limites_intervalos <- c("09:00", "13:00", "17:00", "21:00")
+
+#Define las etiquetas de los intervalos
+etiquetas_intervalos <- c("9:00 a 12:59", "13:00 a 16:59", "17:00 a 20:59", "21:00 a 21:30")
+
+#Crea una función para asignar etiquetas de intervalos
+asignar_intervalo <- function(Hora) {
+  for (i in seq_along(limites_intervalos)) {
+    #print(paste("Hora:", Hora))
+    #print(paste("Límite inferior:", hm(limites_intervalos[i])))
+    #print(paste("Límite superior:",hm(limites_intervalos[i+1])))
+    if(hm(Hora) < hm(limites_intervalos[i]) ) {
+    
+      return(etiquetas_intervalos[i-1])
+    }else if(hm(Hora) > hm(limites_intervalos[4])){
+      return(etiquetas_intervalos[4])
+    }
+  }
+  return(etiquetas_intervalos[length(etiquetas_intervalos)])  # Para el último intervalo
+}
+
+
+
+#Aplica la función a la columna de horas:
+
+df_calles$intervalos <- sapply(df_calles$Hora, asignar_intervalo)
+
+df_calles %>% group_by(intervalos) %>% summarise(contador =  n())  %>% ggplot(aes(x=intervalos, y= contador, fill = intervalos)) + geom_bar(stat = "identity") + labs(title = "Gráfica 1",
+       subtitle = "Relación entre la hora de compra y el número de tickets en ese intervalo",
+       x = "Intervalos horarios",
+       y = "Número de Tickets",
+       caption = "Los datos han sido extraídos de tickets de Mercadona")
+
+
+###########################################################################
+#¿influye en el precio total?
+df_calles %>% ggplot(aes(x=intervalos, y= Total_euros, fill = intervalos)) + geom_boxplot()  + 
+       labs(title = "Gráfica 1.1",
+       subtitle = "Relación entre la hora de compra y el precio total",
+       x = "Intervalos horarios",
+       y = "Total_euros",
+       caption = "Los datos han sido extraídos de tickets de Mercadona")
 
 ```
 
-# 2. ¿Qué productos tienen la mayor variabilidad en los precios? Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos? ¿Los precios de los productos se mantienen en todos los supermercados?
+```{r}
+# 2. ¿Qué productos tienen la mayor variabilidad en los precios? Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos? ¿Los precios de los productos se mantienen en todos los supermercados? (NEREA)
 
-
-# 3. ¿Existe algún producto que siempre o casi siempre se consuma?
-
-
-# 4. ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
 
 ```
+
+```{r}
+# 3. ¿Qué frutas y pescados han sido los más consumidos por los clientes? 
+      # ¿y qué productos han sido los más vendidos?
+
+#Los 5 frutas/verduras y pescados más vendidos son::
+
+df_fruta_pescados %>% group_by(Nombre) %>% summarise(contador =  n())  %>% 
+                arrange(desc(contador)) %>%   slice(1:5) %>%
+               ggplot(aes(x=Nombre, y= contador, fill = Nombre)) + geom_bar(stat = "identity") + 
+       labs(title = "Gráfica 3",
+       subtitle = "Relación entre frutas y pescados, y su consumición",
+       x = "Frutas y pescados",
+       y = "Frecuencia",
+       caption = "Los datos han sido extraídos de tickets de Mercadona")
+
+
+#Los 3 productos más vendidos son:
+
+df_productos_todos %>% group_by(Nombre) %>% summarise(contador =  n())  %>% 
+                arrange(desc(contador)) %>%   slice(1:3) %>%
+               ggplot(aes(x=Nombre, y= contador, fill = Nombre)) + geom_bar(stat = "identity")  + 
+       labs(title = "Gráfica 3.1",
+       subtitle = "Relación entre productos y su consumición",
+       x = "Productos",
+       y = "Frecuencia",
+       caption = "Los datos han sido extraídos de tickets de Mercadona")          
+
+```
+
+
+```{r}
+# 4. ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes
+     #que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
+ 
+ df_calles  %>% group_by(Parking) %>% summarise(contador =  n())  %>% 
+                arrange(desc(contador)) %>% ggplot(aes(x=Parking, y= contador, fill = Parking))  + geom_bar(stat = "identity")
+       labs(title = "Gráfica 4",
+       subtitle = "Relación entre la cantidad de productos y el servicio Parking",
+       x = "Parking",
+       y = "Cantidad Productos",
+       caption = "Los datos han sido extraídos de tickets de Mercadona")
+       
+       
+       
+       ##############################################################
+       
+       # ¿Existe diferencia entre el precio total de un ticket y el uso del servicio Perking?
+       
+        df_calles %>% group_by(Parking) %>% ggplot(aes(x=Parking, y= Total_euros, fill = Parking))  + geom_boxplot() + labs(title = "Gráfica 5.1 "   , subtitle = "Relación entre Total_euros y el servicio Parking",
+       x = "Parking",
+       y = "Total_euros",
+       caption = "Los datos han sido extraídos de tickets de Mercadona")
+
+```
+
+```{r}
+# 5. ¿Cuántos tickets están registrados en cada población?
+ df_calles %>% group_by(COD_Postal)  %>% summarise(contador =  n(), avg = mean(Total_euros)) %>% ggplot(aes(x=COD_Postal, y= contador, fill = COD_Postal)) +  geom_bar(stat="identity") +
+       labs(title = "Gráfica 5",
+       subtitle = "Relación entre la población y el número de tickets",
+        x = "Código Postal",
+        y = "Cantidad de tickets",
+        caption = "Los datos han sido extraídos de tickets de Mercadona")
+```
+
+##Gráfica Correlación:
+```{r}
+
+df_productos_todos %>% group_by(Factura_simpl, Total_euros) %>% summarise(contador = n()) %>% ggplot(aes(x = contador, y = Total_euros)) +
+  geom_point() + # Añadir puntos
+  geom_smooth(method = "lm", se = FALSE) + # Añadir línea de regresión
+  labs(title = "Correlación entre Cantidad y Total Euros", 
+       x = "Cantidad", y = "Total Euros") 
+```
+
+
+
+
 
 
