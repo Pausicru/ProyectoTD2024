@@ -518,10 +518,76 @@ df_calles %>% ggplot(aes(x=intervalos, y= Total_euros, fill = intervalos)) + geo
 ```
 
 ```{r}
-# 2. ¿Qué productos tienen la mayor variabilidad en los precios? Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos? ¿Los precios de los productos se mantienen en todos los supermercados? (NEREA)
+# 2. ¿Qué productos tienen la mayor variabilidad en los precios? Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos? ¿Los precios de los productos se mantienen en todos los supermercados?
+
+# ¿Qué productos tienen la mayor variabilidad en los precios?
+# Agrupamos por Nombre y calculamos la desviación estándar del precio
+variabilidad_precios <- df_productos_todos %>%
+  group_by(Nombre) %>%
+  summarise(desviacion_estandar = sd(Importe)) %>%
+  arrange(desc(desviacion_estandar)) %>%
+  slice(1:5)
+variabilidad_precios
+
+# Gráfico
+ggplot(variabilidad_precios, aes(x = Nombre, y = desviacion_estandar, fill = Nombre)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Productos con mayor variabilidad de precios",
+       x = "Productos",
+       y = "Desviación estándar de precios",
+       caption = "Datos de precios extraídos de tickets de Mercadona")
+
+# Los productos con mayor variabilidad de precios son:
+cat(paste(variabilidad_precios$Nombre, ":", variabilidad_precios$desviacion_estandar, "\n"))
+
+
+###########################################################################
+#¿ Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?
+
+# Fusionamos los dataframes usando el número de factura
+df_merge <- merge(df_productos_todos["Factura_simpl"], df_fruta_todos["Factura_simpl"], by = "Factura_simpl", all.x = TRUE)
+df_num_tickets_fruta <- unique(df_merge$Factura_simpl)
+
+df_num_tickets_frutas <- data.frame(Numero_de_factura = numeros_de_factura_unicos)
+
+# Contar el número de tickets que contienen frutas y verduras y los que no
+tickets_con <- df_num_tickets_frutas %>%
+  mutate(Frutas_Verduras = ifelse(Numero_de_factura %in% df_fruta_todos$Numero_de_factura, "Sin frutas/verduras", "Con frutas/verduras")) %>%
+  group_by(Frutas_Verduras) %>%
+  summarise(Numero_de_tickets = n())
+
+# Dataframe con sólo el número de factura y el importe total
+df_importe <- df_total_def[, c("Factura_simpl", "Total_euros")]
+
+# Quitamos duplicados si es necesario
+df_importe <- unique(df_importe)
+
+# Calcular el costo total de los productos de frutas y verduras por factura
+costo_frutas_verduras <- df_fruta_todos %>%
+  group_by(Factura_simpl) %>%
+  summarise(Costo_frutas_verduras = sum(Importe))
+
+# Fusionar los dataframes df_importe y costo_frutas_verduras
+df_resultado <- merge(df_importe, costo_frutas_verduras, by = "Factura_simpl", all.x = TRUE)
+
+# Ordenar el dataframe por el importe de los tickets de forma descendente
+df_resultado <- df_resultado[order(-df_resultado$Total_euros), ]
+
+# Reemplazar NA por 0 en todo el dataframe
+df_resultado[is.na(df_resultado)] <- 0
+
+# Calcular el porcentaje del costo de las frutas y verduras en función del costo total
+df_resultado$Porcentaje <- round((df_resultado$Costo_frutas_verduras / df_resultado$Total_euros) * 100, 2)
+
+
+
+###########################################################################
+# Variabilidad de precios según la ubicación del supermercado
 
 
 ```
+
+
 
 ```{r}
 # 3. ¿Qué frutas y pescados han sido los más consumidos por los clientes? 
@@ -569,7 +635,7 @@ df_productos_todos %>% group_by(Nombre) %>% summarise(contador =  n())  %>%
        
        ##############################################################
        
-       # ¿Existe diferencia entre el precio total de un ticket y el uso del servicio Perking?
+       # ¿Existe diferencia entre el precio total de un ticket y el uso del servicio Parking?
        
         df_calles %>% group_by(Parking) %>% ggplot(aes(x=Parking, y= Total_euros, fill = Parking))  + geom_boxplot() + labs(title = "Gráfica 5.1 "   , subtitle = "Relación entre Total_euros y el servicio Parking",
        x = "Parking",
