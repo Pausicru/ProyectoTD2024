@@ -453,7 +453,7 @@ pivot_longer(cols = contains("regla"), names_to = "regla", values_to = "outliers
 ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point(position = 'jitter') +
   labs(title = "Número de outliers detectados por método",
        x = "Método de detección de outliers",
-       y = "Número de outliers")
+       y = "Total_euros")
 ```
 
 
