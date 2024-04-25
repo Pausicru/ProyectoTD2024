@@ -546,13 +546,13 @@ cat(paste(variabilidad_precios$Nombre, ":", variabilidad_precios$desviacion_esta
 
 # Fusionamos los dataframes usando el número de factura
 df_merge <- merge(df_productos_todos["Factura_simpl"], df_fruta_todos["Factura_simpl"], by = "Factura_simpl", all.x = TRUE)
-df_num_tickets_fruta <- unique(df_merge$Factura_simpl)
+numeros_de_factura_unicos <- unique(df_merge$Factura_simpl)
 
-df_num_tickets_frutas <- data.frame(Numero_de_factura = numeros_de_factura_unicos)
+df_num_tickets_frutas <- data.frame(Factura_simpl = numeros_de_factura_unicos)
 
 # Contar el número de tickets que contienen frutas y verduras y los que no
 tickets_con <- df_num_tickets_frutas %>%
-  mutate(Frutas_Verduras = ifelse(Numero_de_factura %in% df_fruta_todos$Numero_de_factura, "Sin frutas/verduras", "Con frutas/verduras")) %>%
+  mutate(Frutas_Verduras = ifelse(Factura_simpl %in% df_fruta_todos$Factura_simpl, "Con frutas/verduras", "Sin frutas/verduras")) %>%
   group_by(Frutas_Verduras) %>%
   summarise(Numero_de_tickets = n())
 
@@ -581,8 +581,14 @@ df_resultado$Porcentaje <- round((df_resultado$Costo_frutas_verduras / df_result
 
 
 
+
 ###########################################################################
 # Variabilidad de precios según la ubicación del supermercado
+
+# Dataframe con información de productos, precios y ubicaciones
+df_precios <- df_total_def %>%
+  select(Nombre, Importe, Calle, Municipio)
+
 
 
 ```
