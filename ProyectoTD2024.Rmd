@@ -619,23 +619,13 @@ if (nrow(productos_mismo_nombre) > 0) {
     mutate(producto_1 = Precio_por_unidad[1], producto_2 = Precio_por_unidad[2]) %>%
     distinct(Nombre, .keep_all = TRUE) %>%
     select(Nombre, producto_1, producto_2)
-  
-  # Visualizar el nuevo dataframe con los precios comparados
-  print(df_comparacion_precios)
 } else {
   print("No se ha comprado el mismo producto en dos ubicaciones diferentes.")
 }
 
-# Caso productos por peso (frutas, verduras y pescados)
-# Filtrar solo los productos de frutas y verduras
-df_ubi_frutas_verduras <- df_fruta_pescados %>%
-  select(Nombre, Eur_el_Kg)
-
-# Filtramos los productos con el mismo nombre
-peso_mismo_nombre <- df_ubi_frutas_verduras %>%
-  group_by(Nombre) %>%
-  filter(n() > 1)  # Filtrar solo aquellos productos con más de una ocurrencia
-
+# Eliminamos los productos a peso para evitar alteraciones
+df_comparacion_precios <- df_comparacion_precios %>%
+  anti_join(df_fruta_pescados, by = "Nombre")
 
 ```
 
