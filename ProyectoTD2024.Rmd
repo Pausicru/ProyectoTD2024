@@ -590,14 +590,23 @@ ggplot(df_resultado, aes(x = Total_euros, y = Porcentaje_frutas_verduras)) +
        x = "Costo total del ticket",
        y = "% que supone el costo de frutas y verduras")
 ggsave("./graficas/Grafica2.2.jpg")
+
 ###########################################################################
 # Variabilidad de precios según la ubicación del supermercado
 
 # Dataframe con información de productos, precios y ubicaciones
 df_precios_ubi <- df_total_def %>%
-  select(Nombre, Importe, Calle, Municipio)
+  select(Nombre, Cantidad, Importe, Calle, Municipio)
 
-# Filtramoslos productos con el mismo nombre
+df_precios_ubi <- df_precios_ubi %>%
+  group_by(Nombre) %>%
+  filter(sum(Cantidad) > 1)
+
+# Calcular el precio por unidad
+df_precios_ubi <- df_precios_ubi %>%
+  mutate(Precio_por_unidad = Importe / Cantidad)
+
+# Filtramos los productos con el mismo nombre
 productos_mismo_nombre <- df_precios_ubi %>%
   group_by(Nombre) %>%
   filter(n() > 1)  # Filtrar solo aquellos productos con más de una ocurrencia
@@ -607,7 +616,7 @@ if (nrow(productos_mismo_nombre) > 0) {
   # Combinar los productos con el mismo nombre en un nuevo dataframe
   df_comparacion_precios <- productos_mismo_nombre %>%
     group_by(Nombre) %>%
-    mutate(producto_1 = Importe[1], producto_2 = Importe[2]) %>%
+    mutate(producto_1 = Precio_por_unidad[1], producto_2 = Precio_por_unidad[2]) %>%
     distinct(Nombre, .keep_all = TRUE) %>%
     select(Nombre, producto_1, producto_2)
   
@@ -618,7 +627,6 @@ if (nrow(productos_mismo_nombre) > 0) {
 }
 
 # Caso productos por peso (frutas, verduras y pescados)
-
 # Filtrar solo los productos de frutas y verduras
 df_ubi_frutas_verduras <- df_fruta_pescados %>%
   select(Nombre, Eur_el_Kg)
