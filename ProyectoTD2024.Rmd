@@ -454,7 +454,7 @@ ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point(position 
   labs(title = "Número de outliers detectados por método",
        x = "Método de detección de outliers",
        y = "Total_euros")
-ggsave("./graficas/GraficaOutliers.pdf")
+ggsave("./graficas/GraficaOutliers.jpg")
 ```
 
 
@@ -505,7 +505,7 @@ df_calles %>% group_by(intervalos) %>% summarise(contador =  n())  %>% ggplot(ae
        x = "Intervalos horarios",
        y = "Número de Tickets",
        caption = "Los datos han sido extraídos de tickets de Mercadona")
-
+ggsave("./graficas/Grafica1.jpg")
 
 ###########################################################################
 #¿influye en el precio total?
@@ -515,7 +515,7 @@ df_calles %>% ggplot(aes(x=intervalos, y= Total_euros, fill = intervalos)) + geo
        x = "Intervalos horarios",
        y = "Total_euros",
        caption = "Los datos han sido extraídos de tickets de Mercadona")
-
+ggsave("./graficas/Grafica1.1.jpg")
 ```
 
 ```{r}
