@@ -1,8 +1,8 @@
 ---
 title: "ProyectoTD2024"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 date: "2024-03-26"
 authors: Marta Molina, Iñaki Martín, Nerea Galera, Sergio Mut, Paula Sigüenza
 ---
@@ -537,12 +537,13 @@ variabilidad_precios <- df_unidad %>%
 # Gráfico top tres productos con más variación
 ggplot(variabilidad_precios, aes(x = Nombre, y = desviacion_estandar, fill = Nombre)) +
   geom_bar(stat = "identity") +
-  labs(title = "Productos con mayor variabilidad de precios",
+  labs(title = "Gráfica 2.1",
+       subtitle = "Productos con mayor variabilidad de precios",
        x = "Productos",
        y = "Desviación estándar de precios",
        caption = "Los datos han sido extraídos de tickets de Mercadona")
-
-###########################################################################
+ggsave("./graficas/Grafica2.1.jpg")
+##########################################################################
 #¿ Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?
 
 # Fusionamos los dataframes usando el número de factura
@@ -584,8 +585,11 @@ df_resultado$Porcentaje_frutas_verduras <- round((df_resultado$Costo_frutas_verd
 ggplot(df_resultado, aes(x = Total_euros, y = Porcentaje_frutas_verduras)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +  # Añadir línea de regresión
-  labs(x = "Costo total del ticket", y = "% que supone el costo de frutas y verduras", title = "Regresión entre Ticket y Costo de Frutas y Verduras")
-
+  labs(title = "Gráfica 2.2",
+       subtitle = "Regresión entre Ticket y Costo de Frutas y Verduras",
+       x = "Costo total del ticket",
+       y = "% que supone el costo de frutas y verduras")
+ggsave("./graficas/Grafica2.2.jpg")
 ###########################################################################
 # Variabilidad de precios según la ubicación del supermercado
 
@@ -613,8 +617,7 @@ if (nrow(productos_mismo_nombre) > 0) {
   print("No se ha comprado el mismo producto en dos ubicaciones diferentes.")
 }
 
-##########
-# Caso productos por peso (frutas, verduras y pesados)
+# Caso productos por peso (frutas, verduras y pescados)
 
 # Filtrar solo los productos de frutas y verduras
 df_ubi_frutas_verduras <- df_fruta_pescados %>%
