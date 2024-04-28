@@ -585,10 +585,28 @@ ggplot(df_resultado, aes(x = Total_euros, y = Porcentaje_frutas_verduras)) +
 # Variabilidad de precios según la ubicación del supermercado
 
 # Dataframe con información de productos, precios y ubicaciones
-df_precios <- df_total_def %>%
+df_precios_ubi <- df_total_def %>%
   select(Nombre, Importe, Calle, Municipio)
 
+# Filtramos los productos con el mismo nombre
+productos_mismo_nombre <- df_precios_ubi %>%
+  group_by(Nombre) %>%
+  filter(n() > 1)  # Filtrar solo aquellos productos con más de una ocurrencia
 
+# Si hay al menos un par de productos con el mismo nombre
+if (nrow(productos_mismo_nombre) > 0) {
+  # Combinar los productos con el mismo nombre en un nuevo dataframe
+  df_comparacion_precios <- productos_mismo_nombre %>%
+    group_by(Nombre) %>%
+    mutate(producto_1 = Importe[1], producto_2 = Importe[2]) %>%
+    distinct(Nombre, .keep_all = TRUE) %>%
+    select(Nombre, producto_1, producto_2)
+  
+  # Visualizar el nuevo dataframe con los precios comparados
+  print(df_comparacion_precios)
+} else {
+  print("No se ha comprado el mismo producto en dos ubicaciones diferentes.")
+}
 
 ```
 
