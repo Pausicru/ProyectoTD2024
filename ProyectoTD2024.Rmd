@@ -611,7 +611,7 @@ df_fruta_pescados %>% group_by(Nombre) %>% summarise(contador =  n())  %>%
        y = "Frecuencia",
        caption = "Los datos han sido extraídos de tickets de Mercadona")
 
-
+ggsave("./graficas/Grafica3.jpg")
 #Los 3 productos más vendidos son:
 
 df_productos_todos %>% group_by(Nombre) %>% summarise(contador =  n())  %>% 
@@ -622,7 +622,7 @@ df_productos_todos %>% group_by(Nombre) %>% summarise(contador =  n())  %>%
        x = "Productos",
        y = "Frecuencia",
        caption = "Los datos han sido extraídos de tickets de Mercadona")          
-
+ggsave("./graficas/Grafica3.1.jpg")
 ```
 
 
