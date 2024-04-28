@@ -637,18 +637,18 @@ ggsave("./graficas/Grafica3.1.jpg")
        x = "Parking",
        y = "Cantidad Productos",
        caption = "Los datos han sido extraídos de tickets de Mercadona")
-       
+ggsave("./graficas/Grafica4.jpg")
        
        
        ##############################################################
        
        # ¿Existe diferencia entre el precio total de un ticket y el uso del servicio Parking?
        
-        df_calles %>% group_by(Parking) %>% ggplot(aes(x=Parking, y= Total_euros, fill = Parking))  + geom_boxplot() + labs(title = "Gráfica 5.1 "   , subtitle = "Relación entre Total_euros y el servicio Parking",
+        df_calles %>% group_by(Parking) %>% ggplot(aes(x=Parking, y= Total_euros, fill = Parking))  + geom_boxplot() + labs(title = "Gráfica 4.1 "   , subtitle = "Relación entre Total_euros y el servicio Parking",
        x = "Parking",
        y = "Total_euros",
        caption = "Los datos han sido extraídos de tickets de Mercadona")
-
+ggsave("./graficas/Grafica4.1,jpg")
 ```
 
 ```{r}
