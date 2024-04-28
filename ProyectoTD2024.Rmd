@@ -343,7 +343,7 @@ df_fruta_pescados <- df_fruta_pescados %>% mutate(Info_def = ifelse(is.na(Info.x
 
 df_fruta_pescados <- df_fruta_pescados %>% mutate(Kgs_def = ifelse(is.na(Kgs.x),Kgs.y, Kgs.x)) %>% select(!c(Kgs.x, Kgs.y)) %>% mutate(Kgs= Kgs_def) %>%select(!Kgs_def)
 
-df_calles <- separate(df_calles, Municipio, into = c("COD_Postal", "Municipio"), sep = " ")
+df_calles <- separate(df_calles, Municipio, into = c("COD_Postal", "Municipio"), sep = " ", remove = FALSE, extra = "merge")
 ```
 ## 4.Análisis Inicial de los datos.
 
@@ -450,10 +450,11 @@ sort(df_tickets$Total_euros[df_tickets$Total_euros_reglapercentil])
 #Graficamos:
  df_tickets %>%
 pivot_longer(cols = contains("regla"), names_to = "regla", values_to = "outliers")%>%
-ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point(position = 'jitter') +
+ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point() +
   labs(title = "Número de outliers detectados por método",
        x = "Método de detección de outliers",
        y = "Total_euros")
+ 
 ggsave("./graficas/GraficaOutliers.jpg")
 ```
 
@@ -532,7 +533,7 @@ variabilidad_precios <- df_unidad %>%
   group_by(Nombre) %>%
   summarise(desviacion_estandar = sd(Importe)) %>%
   arrange(desc(desviacion_estandar)) %>%
-  slice(1:3)
+  slice(1:6)
 
 # Gráfico top tres productos con más variación
 ggplot(variabilidad_precios, aes(x = Nombre, y = desviacion_estandar, fill = Nombre)) +
@@ -541,7 +542,9 @@ ggplot(variabilidad_precios, aes(x = Nombre, y = desviacion_estandar, fill = Nom
        subtitle = "Productos con mayor variabilidad de precios",
        x = "Productos",
        y = "Desviación estándar de precios",
-       caption = "Los datos han sido extraídos de tickets de Mercadona")
+       caption = "Los datos han sido extraídos de tickets de Mercadona") +
+  theme(axis.text.x = element_blank())
+
 ggsave("./graficas/Grafica2.1.jpg")
 ##########################################################################
 #¿ Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?
@@ -641,22 +644,32 @@ df_fruta_pescados %>% group_by(Nombre) %>% summarise(contador =  n())  %>%
                 arrange(desc(contador)) %>%   slice(1:5) %>%
                ggplot(aes(x=Nombre, y= contador, fill = Nombre)) + geom_bar(stat = "identity") + 
        labs(title = "Gráfica 3",
-       subtitle = "Relación entre frutas y pescados, y su consumición",
+       subtitle = "Relación entre frutas y pescados, y su consumo",
        x = "Frutas y pescados",
        y = "Frecuencia",
-       caption = "Los datos han sido extraídos de tickets de Mercadona")
+       caption = "Los datos han sido extraídos de tickets de Mercadona")+
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggsave("./graficas/Grafica3.jpg")
 #Los 3 productos más vendidos son:
 
 df_productos_todos %>% group_by(Nombre) %>% summarise(contador =  n())  %>% 
-                arrange(desc(contador)) %>%   slice(1:3) %>%
+                arrange(desc(contador)) %>%   slice(1:8) %>%
                ggplot(aes(x=Nombre, y= contador, fill = Nombre)) + geom_bar(stat = "identity")  + 
        labs(title = "Gráfica 3.1",
-       subtitle = "Relación entre productos y su consumición",
+       subtitle = "Relación entre productos y su consumo",
        x = "Productos",
        y = "Frecuencia",
-       caption = "Los datos han sido extraídos de tickets de Mercadona")          
+       caption = "Los datos han sido extraídos de tickets de Mercadona") + 
+       theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+
+########################################
+#Quitar bolsa plástico , y hacer gráfica con media total_euros y ver bolsas.
+
 ggsave("./graficas/Grafica3.1.jpg")
 ```
 
@@ -664,9 +677,10 @@ ggsave("./graficas/Grafica3.1.jpg")
 ```{r}
 # 4. ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes
      #que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
- 
+
+
  df_calles  %>% group_by(Parking) %>% summarise(contador =  n())  %>% 
-                arrange(desc(contador)) %>% ggplot(aes(x=Parking, y= contador, fill = Parking))  + geom_bar(stat = "identity")
+                arrange(desc(contador)) %>% ggplot(aes(x=Parking, y= contador, fill = Parking))  + geom_bar(stat = "identity") +
        labs(title = "Gráfica 4",
        subtitle = "Relación entre la cantidad de productos y el servicio Parking",
        x = "Parking",
@@ -688,12 +702,14 @@ ggsave("./graficas/Grafica4.1.jpg")
 
 ```{r}
 # 5. ¿Cuántos tickets están registrados en cada población?
- df_calles %>% group_by(COD_Postal)  %>% summarise(contador =  n(), avg = mean(Total_euros)) %>% ggplot(aes(x=COD_Postal, y= contador, fill = COD_Postal)) +  geom_bar(stat="identity") +
+ df_calles %>% group_by(Municipio)  %>% summarise(contador =  n(), avg = mean(Total_euros)) %>% ggplot(aes(x=Municipio, y= contador, fill = Municipio)) +     geom_bar(stat="identity") +
        labs(title = "Gráfica 5",
        subtitle = "Relación entre la población y el número de tickets",
-        x = "Código Postal",
+        x = "Población",
         y = "Cantidad de tickets",
-        caption = "Los datos han sido extraídos de tickets de Mercadona")
+        caption = "Los datos han sido extraídos de tickets de Mercadona") +
+        theme(axis.text.x = element_blank())
+
 ggsave("./graficas/Grafica5.jpg")
 ```
 
@@ -701,7 +717,7 @@ ggsave("./graficas/Grafica5.jpg")
 ```{r}
 
 df_productos_todos %>% group_by(Factura_simpl, Total_euros) %>% summarise(contador = n()) %>% ggplot(aes(x = contador, y = Total_euros)) +
-  geom_point() + # Añadir puntos
+  geom_point() +
   geom_smooth(method = "lm", se = FALSE) + # Añadir línea de regresión
   labs(title = "Correlación entre Cantidad y Total Euros", 
        x = "Cantidad", y = "Total Euros") 
