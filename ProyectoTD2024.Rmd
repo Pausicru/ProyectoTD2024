@@ -424,7 +424,7 @@ reglapercentil <- function(x){
   q1 <- quantile(x, 0.05, na.rm = T)
   q2 <- quantile(x, 0.95, na.rm = T)
   out <- (x>q2|x<q1)
-  }
+}
 ```
 
 
@@ -454,6 +454,7 @@ ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point(position 
   labs(title = "Número de outliers detectados por método",
        x = "Método de detección de outliers",
        y = "Total_euros")
+ggsave("./graficas/GraficaOutliers.pdf")
 ```
 
 
