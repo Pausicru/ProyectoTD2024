@@ -648,7 +648,7 @@ ggsave("./graficas/Grafica4.jpg")
        x = "Parking",
        y = "Total_euros",
        caption = "Los datos han sido extraídos de tickets de Mercadona")
-ggsave("./graficas/Grafica4.1,jpg")
+ggsave("./graficas/Grafica4.1.jpg")
 ```
 
 ```{r}
@@ -659,6 +659,7 @@ ggsave("./graficas/Grafica4.1,jpg")
         x = "Código Postal",
         y = "Cantidad de tickets",
         caption = "Los datos han sido extraídos de tickets de Mercadona")
+ggsave("./graficas/Grafica5.jpg")
 ```
 
 ##Gráfica Correlación:
