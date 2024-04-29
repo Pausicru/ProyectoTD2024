@@ -1,0 +1,523 @@
+---
+title: "ProyectoTD2024"
+output: html_document
+date: "2024-03-26"
+authors: "Marta Molina, Iñaki Martín, Nerea Galera, Sergio Mut"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+## 1. Introducción al trabajo:
+Este proyecto trata sobre desarrollar un programa que permita analizar una serie de tickets de compra de supermercado.
+
+El objetivo es enfrentarse a un problema real de tratamiento de datos, realizando un seguimiento de (evolución de precios, compras más habituales, productos más consumidos, supermercado habitual, hora de compra, etc).
+
+Este proyecto ha sido realizado con control de cambios GIT. Tiene un repositorio compartido entre las miembros del grupo llamado ProyectoTD2024 en la plataforma GitHub y en el cual se ven los cambios y desarrollo del trabajo.
+
+##Información del proyecto:
+Se dispone de varios tickets para empezar a trabajar y un jupiter notebook de python (TicketPDF2TXT.ipynb) que transforma todos los ficheros con extensión pdf presentes en la carpeta data en ficheros de texto con toda la información.
+
+## 1.1 Instalación de paquetes:
+Primeramente, vamos a cargar todas las librerías necesarias en las diferentes fases del proyecto. Haciendo esto de una forma elegante, comprobando si el usuario tiene instalados los paquetes necesarios y desacrgándolos en caso necesario.
+```{r}
+# Este bloque se encarga de instalar los paquetes necesarios.
+
+packages = c("tidyverse","knitr","reshape2", "lubridate")
+package.check <- lapply(packages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE,repos='http://cran.rediris.es')
+  }
+  library(x, character.only = TRUE)
+})
+
+search()
+```
+##Importación de datos y creación del DataFrame:
+A continuación se realiza la carga del conjunto de  datos que provienen de unos tickets de un supermercado, en este caso el Mercadona. Estos tickets se encuentran en dos tipos de formato, algunos están en pdf y otros en txt almacenados en la carpeta ./data incluida en el repositorio del proyecto. Debido a la mezcla de formatos, para analizar nuestros datos necesitamos tener todos los archivos en formato txt, por lo que usaremos el archivo "TicketPDF2TXT.ipynb" que automáticamente transforma los tickets en formato pdf en txt.
+Para poder leer la información de forma adecuada y clarificadora creamos distintos dataframes con la distinta información que nos puede aportar cada uno de los tickets. Separandolos primeramente ya que cada dato contiene una información diferente para luego crear un último data frame final con toda la información ordenada.
+```{r}
+# Cargamos en la variable. 'rutas' los archivos que deseamos leer,
+# poseemos de 12 archivos a leer, que se corresponden
+# a 12 tickets de compra de un supermercado:
+rutas <- list.files("data/",  pattern = "\\.txt$")
+```
+
+```{r}
+# DATAFRAMES individuales:
+
+# Data frame para almacenar todos los datos de los tickets.
+df_todos <- data.frame()  
+# Data frame para almacenar los datos de los productos de los tickets.
+df_productos_todos <- data.frame() 
+# Data frame para almacenar los datos de la fruta de los tickets.
+df_fruta_todos <- data.frame()
+# Data frame para almacenar los datos del pescado de los tickets.
+df_pescado_todos <- data.frame()  
+
+# Recorremos los archivos mediante un bucle 'para',
+# para así poder cargar en un data frame todos
+# los datos de los tickets:
+for (archivo in rutas){
+  
+  # Utilizamos la función 'readlines()'
+  x <- readLines(paste("data", archivo, sep = "/"), encoding = "latin1")
+   
+  prod <- x[8:length(x)]   # Notamos que las primeras líneas de los tickets son iguales siempre:
+  producto <- list()  # Lista para almacenar los productos.
+  lista_pescado = list()  # Lista para almacenar los productos de pescado.
+  lista_fruta = list()  # Lista para almacenar los productos de fruta.
+  final <- list()  # Lista para almacenar la información final de cada ticket.
+  enc = FALSE  # Variable para controlar si se ha encontrado la línea 'TOTAL (€)'.
+  pescado = FALSE  # Variable para controlar si se está procesando pescado.
+  fruta = FALSE  # Variable para controlar si se está procesando fruta.
+  parking = FALSE  # Variable para controlar si se ha encontrado la línea 'PARKING'.
+  
+  # Bucle 'para' con el objetivo de encontrar los elementos deseados:
+   for (elemento in prod){
+     
+     # Vemos que, el final de cada tiquet es diferente,
+     # depende de los productos de cada ticket.
+     # Destacar a partir de la línea donde se encuentra
+     # 'TOTAL (€)' :
+
+     if (grepl("TOTAL", elemento)){
+         enc = TRUE
+     }
+     if (grepl("PARKING", elemento)){
+         parking = TRUE
+     }
+      # Comprobar si la línea no termina con un número 
+      # y no se ha empezado a procesar pescado.
+      if (!grepl("\\d$", elemento) & pescado == FALSE) {
+         fruta = TRUE # Indicar que se está procesando fruta
+     }
+
+    # Procesamiento de la línea dependiendo de las condiciones anteriores.
+     if (enc == FALSE & pescado == FALSE & fruta == FALSE & parking == FALSE){
+         producto <- c(producto, elemento)  # Añadir elemento a la lista de productos
+     }
+     if (fruta == TRUE & enc == FALSE & pescado == FALSE & parking == FALSE){
+       lista_fruta <- c(lista_fruta, elemento) #Añadir elemento a la lista de productos de fruta.
+     }
+     if (pescado == TRUE & enc == FALSE & fruta == FALSE){
+       lista_pescado <- c(lista_pescado, elemento) # Añadir elemento a la lista de productos de pescado.
+     }
+     if (enc == TRUE){
+       final <- c(final, elemento) # Añadir elemento a la lista de información final.
+     }
+     if (grepl("PESCADO", elemento)){
+         pescado = TRUE # Indicar que se está procesando pescado.
+         fruta = FALSE # Resetear la variable de procesamiento de fruta.
+     }
+
+     
+   }
+   if (parking == TRUE){
+       parkingl <- "SI"
+     }else{
+       parkingl <- "NO"
+     }
+   partes <- strsplit(x[5], " OP: ")[[1]]
+   id <- strsplit(x[6], "FACTURA SIMPLIFICADA: ")[[1]]
+   telef <- strsplit(x[4], "TELÉFONO: ")[[1]]
+   # Crear el dataframe principal con la información obtenida
+   df <- data.frame(Nombre = x[1], Calle = x[2], Municipio = x[3], Telefono = telef[2], Fecha = partes[1],  OP = partes[2], Factura_simpl= id[[2]], Parking = parkingl, Productos = producto[0:length(producto)])
+  
+  # Convertir el dataframe de formato ancho a formato largo:
+  df <- pivot_longer(df, names_to = "Producto", values_to = "Productos", cols = -c("Nombre","Calle", "Municipio", "Telefono", "Fecha", "OP", "Factura_simpl", "Parking")) 
+
+  # Agregar el dataframe actual al dataframe general:
+  df_todos <- rbind(df_todos, df)
+  total_columnas <- ncol(df)
+  posicion <- total_columnas - 1
+  df <- df[, -posicion]
+  
+  # Cantidad:
+  # Seleccionamos las columnas relevantes del dataframe original.
+  df_productos <- select(df, 1, 7, 9) # tenemos en cuenta el identificador ('Factura_simpl').
+  
+  # Extraemos la cantidad de cada producto.
+  df_separado <- df_productos %>%
+  mutate(Cantidad = substr(Productos, 1, 1))
+  
+  # Eliminamos la parte de cantidad de la columna 'Productos'.
+  df_separado$Productos <- substr(df$Productos, 2, nchar(df$Productos))
+  
+  # Convertimos la columna de cantidad a tipo numérico.
+  df_separado$Cantidad <- as.numeric(df_separado$Cantidad)
+  
+  # Importe:
+  # Extraemos el importe de cada producto.
+  df_separado$Importe <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", df_separado$Productos)
+# Reemplazamos las comas por puntos en el importe.
+  df_separado$Importe <- gsub(",", ".", df_separado$Importe)
+  # Convertimos la columna de importe a tipo numérico.
+  df_separado$Importe <- as.numeric(df_separado$Importe)
+  
+  # Precio por Unidad:
+  # Calculamos el precio por unidad.
+  df_separado <- df_separado %>% mutate(PUnidad = Importe / Cantidad)
+
+  # Nombre del producto:
+
+# Creamos una nueva columna "Nombre" con la parte de la columna "Productos" correspondiente al nombre del producto
+df_separado$Nombre <- substr(df_separado$Productos, 1, nchar(df_separado$Productos) - 4 - 1)
+
+# Si la cantidad es mayor que 1, ajustamos la columna "Nombre" eliminando la parte correspondiente al precio unitario
+df_separado$Nombre[df_separado$Cantidad > 1] <- substr(df_separado$Nombre[df_separado$Cantidad > 1], 1, nchar(df_separado$Nombre[df_separado$Cantidad > 1]) - 4 - 1)
+
+# Sobrescribir la columna Productos con sólo el nombre del producto:
+  df_separado$Productos <- df_separado$Nombre
+  # Añadimos información adicional al dataframe:
+  # Se agrega el importe total en euros, la operación y el lugar de estacionamiento.
+  df_separado$Total_euros <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", final[1])
+  df_separado$Total_euros <- gsub(",", ".", df_separado$Total_euros)
+  df_separado$Total_euros <- as.numeric(df_separado$Total_euros)
+  df_separado$OP <- partes[2]
+  df_separado$Parking <- parkingl
+  
+  # Añadimos el dataframe 'df_separado' al dataframe general 'df_productos_todos'.
+  df_productos_todos <- rbind(df_productos_todos, df_separado)
+
+  # Si hay productos de tipo fruta y la lista no está vacía:
+  if (fruta == TRUE & length(lista_fruta) != 0 ){
+     # Creamos un dataframe para los productos de fruta.
+    df_fruta <- data.frame(Productos = character(), Info = character(), OP = character())
+    indice <- length(lista_fruta) -1
+    i <- 1  # Inicializar el índice.
+  
+  # Bucle 'mientras' para creación de df_fruta:
+  while (i <= indice) {
+
+    df_fruta <- rbind(df_fruta, data.frame(Productos = lista_fruta[[i]], Info = lista_fruta[[i+1]], OP = partes[[2]]))
+    i <- i + 2  
+  }
+    # Procesamos la información de los productos de fruta.
+    df_fruta <- df_fruta %>%
+    mutate(Cantidad = substr(Productos, 1, 1))
+    df_fruta$Nombre <- substr(df_fruta$Productos, 2, nchar(df_fruta$Productos))
+    df_fruta$Importe <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", df_fruta$Info)
+    df_fruta$Kgs <- sub("^(\\d+[,.]\\d+).*", "\\1", df_fruta$Info)
+    df_fruta$Importe <- gsub(",", ".", df_fruta$Importe)
+    df_fruta$Kgs <- gsub(",", ".", df_fruta$Kgs)
+    df_fruta$Importe <- as.numeric(df_fruta$Importe)
+    df_fruta$Kgs <- as.numeric(df_fruta$Kgs)
+    df_fruta$Factura_simpl <- id[[2]]
+    df_fruta$Total_euros <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", final[1])
+    df_fruta$Total_euros <- gsub(",", ".", df_fruta$Total_euros)
+    df_fruta$Total_euros <- as.numeric(df_fruta$Total_euros)
+    df_fruta <- df_fruta %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
+    df_fruta_todos <- rbind(df_fruta_todos, df_fruta)
+   
+  }
+  # Si hay productos de tipo pescado:
+  if (pescado == TRUE){
+    # Creamos un dataframe para los productos de pescado.
+    df_pescado <- data.frame(Productos = character(), Info = character(), OP = character())
+    indice <- length(lista_pescado) -1
+    i <- 1  # Inicializar el índice
+  
+  # Bucle 'mientras' para creación de df_pescado:
+  while (i <= indice) {
+    df_pescado <- rbind(df_pescado, data.frame(Productos = lista_pescado[[i]], Info = lista_pescado[[i+1]], OP = partes[2]) )
+    i <- i + 2  
+  }
+# Procesamos la información de los productos de pescado.
+    df_pescado$Nombre <- substr(df_pescado$Productos, 1, nchar(df_pescado$Productos))
+    df_pescado$Importe <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", df_pescado$Info)
+    df_pescado$Kgs <- sub("^(\\d+[,.]\\d+).*", "\\1", df_pescado$Info)
+    df_pescado$Importe <- gsub(",", ".", df_pescado$Importe)
+    df_pescado$Kgs <- gsub(",", ".", df_pescado$Kgs)
+    df_pescado$Importe <- as.numeric(df_pescado$Importe)
+    df_pescado$Kgs <- as.numeric(df_pescado$Kgs)
+    df_pescado$Total_euros <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", final[1])
+    df_pescado$Total_euros <- gsub(",", ".", df_pescado$Total_euros)
+    df_pescado$Total_euros <- as.numeric(df_pescado$Total_euros)
+    df_pescado <- df_pescado %>% mutate(Eur_el_Kg = round(Importe / Kgs, 2))
+    df_pescado$Factura_simpl <- id[[2]]
+    df_pescado_todos <- rbind(df_pescado_todos, df_pescado)
+
+  }
+}
+```
+
+```{r}
+# En este momento de la Importación, realizaremos un DATAFRAME conjunto(df_tickets).
+
+
+# Tenemos en cuenta el identificador de cada ticket, y además destacar
+# cada tipo de formado dentro de productos:fruta, pescado y productos restantes.
+#F ruta:
+x_fruta <- df_fruta_todos$Productos 
+# Productos en general(sin fruta ni pescado), ya que tienen un formato != :
+x_prod <- df_productos_todos$Productos
+# Pescados:
+x_pescado <- df_pescado_todos$Productos
+# Añadimos al vector de fruas, el vector de productos restantes,
+# mediante un append:
+Productos <- append(x_fruta, x_prod)
+
+# Dataframe uniendo la fruta y los productos restantes,
+# mediante un full_join:
+df_total <- full_join(df_fruta_todos, df_productos_todos, by="Productos")
+
+# Arreglamos el dataframe con el fotmato adecuado para las vbles correspondientes:
+# Ajustamos el nombre del producto.
+df_total <- df_total %>% mutate(Nombre_def = ifelse(is.na(Nombre.x), Nombre.y, Nombre.x)) %>% select(!c(Nombre.x, Nombre.y)) %>% mutate(Nombre= Nombre_def) %>%select(!Nombre_def)
+# Ajustamos la cantidad.
+df_total <- df_total %>% mutate(Cantidad_def = ifelse(is.na(Cantidad.x), Cantidad.y, Cantidad.x)) %>% select(!c(Cantidad.x, Cantidad.y)) %>% mutate(Cantidad=Cantidad_def) %>% select(!Cantidad_def)
+
+# Ajustamos el importe.
+df_total <- df_total %>% mutate(Importe_def = ifelse(is.na(Importe.x), Importe.y, Importe.x)) %>% select(!c(Importe.x, Importe.y))%>% mutate(Importe=Importe_def) %>% select(!Importe_def)
+
+# Ajustamos la operación
+df_total <- df_total %>% mutate(OP_def = ifelse(is.na(OP.x), OP.y, OP.x)) %>% select(!c(OP.x, OP.y))%>% mutate(OP=OP_def) %>% select(!OP_def)
+
+# Ajustamos la factura simplificada.
+df_total <- df_total %>%
+  mutate(Factura_simpl_def = ifelse(is.na(Factura_simpl.y), Factura_simpl.x, Factura_simpl.y)) %>%
+  select(-c(Factura_simpl.y, Factura_simpl.x)) %>%
+  mutate(Factura_simpl = Factura_simpl_def) %>%
+  select(-Factura_simpl_def)
+
+# Ajustamos el total en euros.
+df_total <- df_total %>% mutate(Total_euros_def = ifelse(is.na(Total_euros.x), Total_euros.y, Total_euros.x)) %>% select(!c(Total_euros.x, Total_euros.y)) %>% mutate(Total_euros=Total_euros_def) %>% select(!Total_euros_def)
+
+# Dataframe objetivo (final), uniendo la información de fruta, productos y pescados:
+# mediante un full_join:
+df_total_def <- full_join(df_total, df_pescado_todos, by="Productos")
+
+# Arreglamos el dataframe con el fotmato adecuado para las variables correspondientes:
+# Ajustamos el nombre del producto.
+df_total_def <- df_total_def %>% mutate(Nombre_def = ifelse(is.na(Nombre.x), Nombre.y, Nombre.x)) %>% select(!c(Nombre.x, Nombre.y)) %>% mutate(Nombre= Nombre_def) %>%select(!Nombre_def)
+
+# Ajustamos el importe.
+df_total_def <- df_total_def %>% mutate(Importe_def = ifelse(is.na(Importe.x), Importe.y, Importe.x)) %>% select(!c(Importe.x, Importe.y))%>% mutate(Importe=Importe_def) %>% select(!Importe_def)
+
+# Ajustamos la operación.
+df_total_def <- df_total_def %>% mutate(OP_def = ifelse(is.na(OP.x), OP.y, OP.x)) %>% select(!c(OP.x, OP.y))%>% mutate(OP=OP_def) %>% select(!OP_def)
+
+# Ajustamos los kilogramos.
+df_total_def <- df_total_def %>% mutate(Kgs_def = ifelse(is.na(Kgs.x),Kgs.y, Kgs.x)) %>% select(!c(Kgs.x, Kgs.y)) %>% mutate(Kgs= Kgs_def) %>%select(!Kgs_def)
+
+# Ajustamos el precio por kilogramo.
+df_total_def <- df_total_def %>% mutate(Eur_el_Kg_def = ifelse(is.na(Eur_el_Kg.x), Eur_el_Kg.y, Eur_el_Kg.x)) %>% select(!c(Eur_el_Kg.x, Eur_el_Kg.y)) %>% mutate(Eur_el_Kg=Eur_el_Kg_def) %>% select(!Eur_el_Kg_def)
+
+# Ajustamos la información adicional.
+df_total_def <- df_total_def %>% mutate(Info_def = ifelse(is.na(Info.x), Info.y, Info.x)) %>% select(!c(Info.x, Info.y)) %>% mutate(Info=Info_def) %>% select(!Info_def)
+
+# Ajustamos la factura simplificada.
+df_total_def <- df_total_def %>%
+  mutate(Factura_simpl_def = ifelse(is.na(Factura_simpl.y), Factura_simpl.x, Factura_simpl.y)) %>%
+  select(-c(Factura_simpl.y, Factura_simpl.x)) %>%
+  mutate(Factura_simpl = Factura_simpl_def) %>%
+  select(-Factura_simpl_def)
+
+# Ajustamos el total en euros.
+df_total_def <- df_total_def %>% mutate(Total_euros_def = ifelse(is.na(Total_euros.x), Total_euros.y, Total_euros.x)) %>% select(!c(Total_euros.x, Total_euros.y)) %>% mutate(Total_euros=Total_euros_def) %>% select(!Total_euros_def)
+
+# Creamos un dataframe con la información de cada supermercado.
+df_calles <- df_todos  %>% select(!c(Producto,Productos,OP)) %>% mutate(nombre_super = Nombre)  %>% select(!Nombre) 
+
+# Eliminamos duplicados.
+df_calles <- unique(df_calles)
+
+#DATAFRAME OBJETIVO (final), con la información de todos los productos de
+#cada ticket, incluidos la fruta y los pescados,
+#además de la información de cada supermercado:
+df_total_def <- left_join(df_total_def,df_calles,by = "Factura_simpl")
+df_tickets <- df_total_def %>% mutate(Parking_def = ifelse(is.na(Parking.x), Parking.y, Parking.x)) %>% select(!c(Parking.x, Parking.y)) %>% mutate(Parking=Parking_def) %>% select(!Parking_def)
+
+
+#Hacemos el entorno amigable:
+df_calles <- df_tickets %>% select(!c(Productos,Info,Eur_el_Kg,Kgs,Importe,Nombre,OP, Cantidad, PUnidad))
+df_calles <- unique(df_calles)
+
+#Tener en cuenta el formato 'Fecha' correcto.
+df_calles <- separate(df_calles, Fecha, into = c("Fecha", "Hora"), sep = " ")
+#df_calles$Hora <- hm(df_calles$Hora)
+
+
+df_fruta_pescados <- full_join(df_fruta_todos, df_pescado_todos, by = "Productos" )
+
+# Arreglamos el dataframe con el fotmato adecuado para las vbles correspondientes:
+# Ajustamos el nombre del producto.
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Nombre_def = ifelse(is.na(Nombre.x), Nombre.y, Nombre.x)) %>% select(!c(Nombre.x, Nombre.y)) %>% mutate(Nombre= Nombre_def) %>%select(!Nombre_def)
+
+# Ajustamos el importe.
+df_fruta_pescados <- df_fruta_pescados%>% mutate(Importe_def = ifelse(is.na(Importe.x), Importe.y, Importe.x)) %>% select(!c(Importe.x, Importe.y))%>% mutate(Importe=Importe_def) %>% select(!Importe_def)
+
+# Ajustamos la operación.
+df_fruta_pescados<- df_fruta_pescados %>% mutate(OP_def = ifelse(is.na(OP.x), OP.y, OP.x)) %>% select(!c(OP.x, OP.y))%>% mutate(OP=OP_def) %>% select(!OP_def)
+
+# Ajustamos la factura simplificada.
+df_fruta_pescados <-df_fruta_pescados %>%
+  mutate(Factura_simpl_def = ifelse(is.na(Factura_simpl.y), Factura_simpl.x, Factura_simpl.y)) %>%
+  select(-c(Factura_simpl.y, Factura_simpl.x)) %>%
+  mutate(Factura_simpl = Factura_simpl_def) %>%
+  select(-Factura_simpl_def)
+
+# Ajustamos el total en euros.
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Total_euros_def = ifelse(is.na(Total_euros.x), Total_euros.y, Total_euros.x)) %>% select(!c(Total_euros.x, Total_euros.y)) %>% mutate(Total_euros=Total_euros_def) %>% select(!Total_euros_def)
+
+# Ajustamos el precio por kilogramo.
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Eur_el_Kg_def = ifelse(is.na(Eur_el_Kg.x), Eur_el_Kg.y, Eur_el_Kg.x)) %>% select(!c(Eur_el_Kg.x, Eur_el_Kg.y)) %>% mutate(Eur_el_Kg=Eur_el_Kg_def) %>% select(!Eur_el_Kg_def)
+
+# Ajustamos la información adicional.
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Info_def = ifelse(is.na(Info.x), Info.y, Info.x)) %>% select(!c(Info.x, Info.y)) %>% mutate(Info=Info_def) %>% select(!Info_def)
+
+# Ajustamos los kilogramos.
+df_fruta_pescados <- df_fruta_pescados %>% mutate(Kgs_def = ifelse(is.na(Kgs.x),Kgs.y, Kgs.x)) %>% select(!c(Kgs.x, Kgs.y)) %>% mutate(Kgs= Kgs_def) %>%select(!Kgs_def)
+```
+## 4.Análisis Inicial de los datos.
+
+Para una primera aproximación a los datos estudiaremos el significado de las variables para una mejor comprensión de los estadísticos y detectar datos anómalos o outliers. 
+
+Utilizaremos el dataframe objetivo para ello, es decir, el 'df_tickets'. 
+
+## 5.Datos anómalos.
+
+En este subapartado pasaremos a detectar datos anómalos, ya sean NA's u outliers.
+
+
+En primer lugar, respecto a los NA's, podemos ver que solamente existen en 4 columnas.
+
+Existen NA´s en las columnas (vbles.) PUnidad y en Total_euoros cuando se hace referencia
+a las Frutas y a los Pescados. 
+Esto tiene sentido, ya que, ambos dos tienen un formato diferente al resto de productos.
+
+Además, existen NA´s en las columnas (vbles.) Kgs, Eur_el_kg y en Info 
+cuando se hace referencia al resto de pructos que no sean ni frutas ni pescados.
+Esto también tiene sentido, ya que, complementa a lo anterior, es decir, 
+el resto de productos no constan de ese tipo de formato.
+a las Frutas y a los Pescados. 
+
+
+En segundo lugar, para la detección de outliers sólo hace falta visualizar
+las gráficas, de esta manera podremos concluir que sí hay o no presencia de
+outliers en los datos.
+En nuestro caso, no constan.
+
+## 5.1.Detección de NA's:
+
+Primero haremos un recuento de NA's del dataframe objetivo con la función 
+`is.na()` , dado que son valores lógicos sumaremos la cantidad total. 
+En el caso de que haya presencia de NA's utilizaremos la función `apply()` 
+para contar NA´s a lo largo de filas o columnas.
+
+```{r}
+
+```
+## 5.2.Detección de Outliers:
+Un outlier es una observación (o conjunto de observaciones) que divergen
+del patrón de comportamiento del resto de datos, es decir, presentan una
+desviación respecto de la distribución de los datos. 
+Para su detección contamos con 4 métodos: `reglasigma(x)`, `reglahampel(x)`,
+`reglaboxplot(x)` y `reglapercentil(x)`.
+Visualmente se pueden detectar mediante un `boxplot()`.
+
+## 6.Preguntas planteadas con sus respectivas Visualizaciones.
+
+
+```{r}
+# 1. ¿Influye la hora de compra con el número de tickets en esos intervalos de tiempo?
+#, y por consiguiente, ¿influye en el precio total?
+
+#FALTA ORDENAR EN ORDEN CRECIENTE LOS INTERVALOS.
+#Creamos los intervalos de tiempo:
+intervalos <- seq(from = as.POSIXct("09:00", format = "%H:%M"), 
+                  to = as.POSIXct("21:30", format = "%H:%M"), 
+                  by = "4 hours")
+
+#Define los límites de los intervalos
+limites_intervalos <- c("09:00", "13:00", "17:00", "21:00")
+
+#Define las etiquetas de los intervalos
+etiquetas_intervalos <- c("9:00 a 12:59", "13:00 a 16:59", "17:00 a 20:59", "21:00 a 21:30")
+
+#Crea una función para asignar etiquetas de intervalos
+asignar_intervalo <- function(Hora) {
+  for (i in seq_along(limites_intervalos)) {
+    #print(paste("Hora:", Hora))
+    #print(paste("Límite inferior:", hm(limites_intervalos[i])))
+    #print(paste("Límite superior:",hm(limites_intervalos[i+1])))
+    if(hm(Hora) < hm(limites_intervalos[i]) ) {
+    
+      return(etiquetas_intervalos[i-1])
+    }else if(hm(Hora) > hm(limites_intervalos[4])){
+      return(etiquetas_intervalos[4])
+    }
+  }
+  return(etiquetas_intervalos[length(etiquetas_intervalos)])  # Para el último intervalo
+}
+
+
+
+#Aplica la función a la columna de horas:
+
+df_calles$intervalos <- sapply(df_calles$Hora, asignar_intervalo)
+
+df_calles %>% group_by(intervalos) %>% summarise(contador =  n())  %>% ggplot(aes(x=intervalos, y= contador)) + geom_bar(stat = "identity")
+
+
+###########################################################################
+#¿influye en el precio total?
+df_calles %>% ggplot(aes(x=intervalos, y= Total_euros)) + geom_boxplot()  + 
+  labs(x = "Intervalos", y = "Total Euros")
+```
+
+```{r}
+# 2. ¿Qué productos tienen la mayor variabilidad en los precios? Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos? ¿Los precios de los productos se mantienen en todos los supermercados? (NEREA)
+
+
+```
+
+```{r}
+#falta poner colores y leyendas en la grafica:
+
+
+
+
+
+# 3. ¿Qué frutas y pescados han sido los más consumidos por los clientes? 
+      # ¿y qué productos han sido los más vendidos?
+
+#Los 5 frutas/verduras y pescados más vendidos son::
+df_fruta_pescados %>% group_by(Productos) %>% summarise(contador =  n())  %>% 
+                arrange(desc(contador)) %>%   slice(1:5) %>%
+               ggplot(aes(x=Productos, y= contador)) + geom_bar(stat = "identity")
+
+
+#Los 3 productos más vendidos son:
+df_productos_todos %>% group_by(Productos) %>% summarise(contador =  n())  %>% 
+                arrange(desc(contador)) %>%   slice(1:3) %>%
+               ggplot(aes(x=Productos, y= contador)) + geom_bar(stat = "identity")            
+
+```
+
+
+```{r}
+# 4. ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes
+     #que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
+
+ 
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
