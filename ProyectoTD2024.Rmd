@@ -91,11 +91,23 @@ for (archivo in rutas){
      if (grepl("PARKING", elemento)){
          parking = TRUE
      }
+     
+     if (!grepl("\\d$", elemento) & (grepl("^1", elemento))) {
+         fruta = TRUE # Indicar que se está procesando fruta
+         pescado = FALSE
+      }
+          if (pescado == TRUE & enc == FALSE & fruta == FALSE){
+       lista_pescado <- c(lista_pescado, elemento) # Añadir elemento a la lista de productos de pescado.
+          }
+           if (grepl("PESCADO", elemento) & (!grepl("^1", elemento))){
+         pescado = TRUE # Indicar que se está procesando pescado.
+         fruta = FALSE # Resetear la variable de procesamiento de fruta.
+     }
       # Comprobar si la línea no termina con un número 
       # y no se ha empezado a procesar pescado.
-      if (!grepl("\\d$", elemento) & pescado == FALSE) {
-         fruta = TRUE # Indicar que se está procesando fruta
-     }
+      
+
+
 
     # Procesamiento de la línea dependiendo de las condiciones anteriores.
      if (enc == FALSE & pescado == FALSE & fruta == FALSE & parking == FALSE){
@@ -104,15 +116,8 @@ for (archivo in rutas){
      if (fruta == TRUE & enc == FALSE & pescado == FALSE & parking == FALSE){
        lista_fruta <- c(lista_fruta, elemento) #Añadir elemento a la lista de productos de fruta.
      }
-     if (pescado == TRUE & enc == FALSE & fruta == FALSE){
-       lista_pescado <- c(lista_pescado, elemento) # Añadir elemento a la lista de productos de pescado.
-     }
      if (enc == TRUE){
        final <- c(final, elemento) # Añadir elemento a la lista de información final.
-     }
-     if (grepl("PESCADO", elemento)){
-         pescado = TRUE # Indicar que se está procesando pescado.
-         fruta = FALSE # Resetear la variable de procesamiento de fruta.
      }
 
      
@@ -174,7 +179,7 @@ df_separado$Nombre[df_separado$Cantidad > 1] <- substr(df_separado$Nombre[df_sep
   df_productos_todos <- rbind(df_productos_todos, df_separado)
 
   
-  if (fruta == TRUE & length(lista_fruta) != 0 ){
+  if (length(lista_fruta) != 0 ){
     df_fruta <- data.frame(Productos = character(), Info = character(), OP = character())
     indice <- length(lista_fruta) -1
     i <- 1  # Inicializar el índice.
@@ -202,7 +207,7 @@ df_separado$Nombre[df_separado$Cantidad > 1] <- substr(df_separado$Nombre[df_sep
     df_fruta_todos <- rbind(df_fruta_todos, df_fruta)
    
   }
-  if (pescado == TRUE){
+  if (length(lista_pescado) != 0 ){
     df_pescado <- data.frame(Productos = character(), Info = character(), OP = character())
     indice <- length(lista_pescado) -1
     i <- 1  # Inicializar el índice
@@ -212,7 +217,6 @@ df_separado$Nombre[df_separado$Cantidad > 1] <- substr(df_separado$Nombre[df_sep
     df_pescado <- rbind(df_pescado, data.frame(Productos = lista_pescado[[i]], Info = lista_pescado[[i+1]], OP = partes[2]) )
     i <- i + 2  
   }
-
     df_pescado$Nombre <- substr(df_pescado$Productos, 1, nchar(df_pescado$Productos))
     df_pescado$Importe <- sub("^.*\\s+(\\d+[,.]\\d+)$", "\\1", df_pescado$Info)
     df_pescado$Kgs <- sub("^(\\d+[,.]\\d+).*", "\\1", df_pescado$Info)
@@ -307,7 +311,6 @@ df_total_def <- left_join(df_total_def,df_calles,by = "Factura_simpl")
 df_tickets <- df_total_def %>% mutate(Parking_def = ifelse(is.na(Parking.x), Parking.y, Parking.x)) %>% select(!c(Parking.x, Parking.y)) %>% mutate(Parking=Parking_def) %>% select(!Parking_def)
 df_tickets$Parking <- as.factor(df_tickets$Parking)
 
-#Hacemos el entorno amigable:
 ```
 
 
@@ -322,7 +325,7 @@ df_calles <- separate(df_calles, Fecha, into = c("Fecha", "Hora"), sep = " ")
 
 df_fruta_pescados <- full_join(df_fruta_todos, df_pescado_todos, by = "Productos" )
 
-# Arreglamos el dataframe con el fotmato adecuado para las vbles correspondientes:
+# Arreglamos el dataframe con el formato adecuado para las vbles correspondientes:
 df_fruta_pescados <- df_fruta_pescados %>% mutate(Nombre_def = ifelse(is.na(Nombre.x), Nombre.y, Nombre.x)) %>% select(!c(Nombre.x, Nombre.y)) %>% mutate(Nombre= Nombre_def) %>%select(!Nombre_def)
 
 df_fruta_pescados <- df_fruta_pescados%>% mutate(Importe_def = ifelse(is.na(Importe.x), Importe.y, Importe.x)) %>% select(!c(Importe.x, Importe.y))%>% mutate(Importe=Importe_def) %>% select(!Importe_def)
@@ -435,25 +438,26 @@ reglapercentil <- function(x){
 metodos <- list(reglasigma=reglasigma,reglahampel=reglahampel,reglaboxplot=reglaboxplot,reglapercentil=reglapercentil)
 
 #Aplicamoslos métodos de detección de outliers a las columnas numéricas del dataframe:
-df_tickets <- df_tickets %>% select(Total_euros) %>% mutate(across(where(is.numeric), metodos))
+df_tickets_out <- df_tickets %>% select(Total_euros) %>% mutate(across(where(is.numeric), metodos))
 
 #Número de outliers detectados:
-num_outliers <- df_tickets %>% select(contains("regla")) %>% summarise(across(everything(),~sum(.,na.rm = TRUE))) 
+num_outliers <- df_tickets_out %>% select(contains("regla")) %>% summarise(across(everything(),~sum(.,na.rm = TRUE))) 
 
 
 #Valores etiquetados como outliers:
-sort(df_tickets$Total_euros[df_tickets$Total_euros_reglasigma])
-sort(df_tickets$Total_euros[df_tickets$Total_euros_reglahampel])
-sort(df_tickets$Total_euros[df_tickets$Total_euros_reglaboxplot])
-sort(df_tickets$Total_euros[df_tickets$Total_euros_reglapercentil])
+sort(df_tickets_out$Total_euros[df_tickets$Total_euros_reglasigma])
+sort(df_tickets_out$Total_euros[df_tickets$Total_euros_reglahampel])
+sort(df_tickets_out$Total_euros[df_tickets$Total_euros_reglaboxplot])
+sort(df_tickets_out$Total_euros[df_tickets$Total_euros_reglapercentil])
 
 #Graficamos:
- df_tickets %>%
+ df_tickets_out %>%
 pivot_longer(cols = contains("regla"), names_to = "regla", values_to = "outliers")%>%
 ggplot(aes(x = regla, y = Total_euros, color = outliers)) + geom_point() +
   labs(title = "Número de outliers detectados por método",
        x = "Método de detección de outliers",
-       y = "Total_euros")
+       y = "Total_euros") + 
+   theme(axis.text.x = element_text(angle = 45, hjust = 1))
  
 ggsave("./graficas/GraficaOutliers.jpg")
 ```
@@ -474,10 +478,10 @@ intervalos <- seq(from = as.POSIXct("09:00", format = "%H:%M"),
                   by = "4 hours")
 
 #Define los límites de los intervalos
-limites_intervalos <- c("09:00", "13:00", "17:00", "21:00")
+limites_intervalos <- c("09:00", "13:00", "17:00", "21:30")
 
 #Define las etiquetas de los intervalos
-etiquetas_intervalos <- c("9:00 a 12:59", "13:00 a 16:59", "17:00 a 20:59", "21:00 a 21:30")
+etiquetas_intervalos <- c("9:00 a 12:59", "13:00 a 16:59", "17:00 a 21:30")
 
 #Crea una función para asignar etiquetas de intervalos
 asignar_intervalo <- function(Hora) {
@@ -488,8 +492,8 @@ asignar_intervalo <- function(Hora) {
     if(hm(Hora) < hm(limites_intervalos[i]) ) {
     
       return(etiquetas_intervalos[i-1])
-    }else if(hm(Hora) > hm(limites_intervalos[4])){
-      return(etiquetas_intervalos[4])
+    }else if(hm(Hora) > hm(limites_intervalos[3])){
+      return(etiquetas_intervalos[3])
     }
   }
   return(etiquetas_intervalos[length(etiquetas_intervalos)])  # Para el último intervalo
