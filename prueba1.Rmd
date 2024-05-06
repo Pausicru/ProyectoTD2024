@@ -438,6 +438,7 @@ limites_intervalos <- c("09:00", "13:00", "17:00", "21:00")
 #Define las etiquetas de los intervalos
 etiquetas_intervalos <- c("9:00 a 12:59", "13:00 a 16:59", "17:00 a 20:59", "21:00 a 21:30")
 
+
 #Crea una función para asignar etiquetas de intervalos
 asignar_intervalo <- function(Hora) {
   for (i in seq_along(limites_intervalos)) {
