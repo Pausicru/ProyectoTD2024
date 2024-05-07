@@ -634,6 +634,21 @@ if (nrow(productos_mismo_nombre) > 0) {
 df_comparacion_precios <- df_comparacion_precios %>%
   anti_join(df_fruta_pescados, by = "Nombre")
 
+# Filtrar el dataframe para que solo contenga los productos que varían su precio
+df_comparacion_precios_variabilidad <- df_comparacion_precios %>%
+  filter(producto_1 != producto_2)
+
+# Unir los dataframes por el nombre del producto
+df_ubis_precio <- inner_join(df_comparacion_precios_variabilidad, df_precios_ubi, by = "Nombre")
+
+# Filtrar los productos donde el precio es el mínimo y máximo
+df_min_max_ubi <- df_ubis_precio %>%
+  group_by(Nombre) %>%
+  summarise(municipio_precio_min = Municipio[which.min(c(Precio_por_unidad, producto_1, producto_2))],
+            municipio_precio_max = Municipio[which.max(c(Precio_por_unidad, producto_1, producto_2))])
+
+
+
 ```
 
 
