@@ -641,12 +641,22 @@ df_comparacion_precios_variabilidad <- df_comparacion_precios %>%
 # Unir los dataframes por el nombre del producto
 df_ubis_precio <- inner_join(df_comparacion_precios_variabilidad, df_precios_ubi, by = "Nombre")
 
-# Filtrar los productos donde el precio es el mínimo y máximo
+
+# Filtrar los productos donde el precio es el mínimo y máximo, y agregar los precios
 df_min_max_ubi <- df_ubis_precio %>%
   group_by(Nombre) %>%
   summarise(municipio_precio_min = Municipio[which.min(c(Precio_por_unidad, producto_1, producto_2))],
-            municipio_precio_max = Municipio[which.max(c(Precio_por_unidad, producto_1, producto_2))])
+            precio_min = min(Precio_por_unidad, producto_1, producto_2),
+            municipio_precio_max = Municipio[which.max(c(Precio_por_unidad, producto_1, producto_2))],
+            precio_max = max(Precio_por_unidad, producto_1, producto_2))
 
+# Diferencia entre el precio máximo y mínimo
+df_min_max_ubi <- df_min_max_ubi %>%
+  mutate(diferencia_precio = precio_max / precio_min)
+
+# Filtrar los casos para evitar que se compare el precio de una unidad con la compra de más de una ud.
+df_min_max_ubi <- df_min_max_ubi %>%
+  filter(diferencia_precio < 2)
 
 
 ```
