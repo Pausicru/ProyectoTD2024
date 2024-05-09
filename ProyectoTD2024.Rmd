@@ -506,7 +506,7 @@ asignar_intervalo <- function(Hora) {
 df_calles$intervalos <- sapply(df_calles$Hora, asignar_intervalo)
 
 df_calles %>% group_by(intervalos) %>% summarise(contador =  n())  %>% ggplot(aes(x=intervalos, y= contador, fill = intervalos)) + geom_bar(stat = "identity") + labs(title = "Gráfica 1",
-       subtitle = "Relación entre la hora de compra y el número de tickets en ese intervalo",
+       subtitle = "Hora de compra V/S número de tickets en ese intervalo",
        x = "Intervalos horarios",
        y = "Número de Tickets",
        caption = "Los datos han sido extraídos de tickets de Mercadona")
@@ -634,31 +634,6 @@ if (nrow(productos_mismo_nombre) > 0) {
 df_comparacion_precios <- df_comparacion_precios %>%
   anti_join(df_fruta_pescados, by = "Nombre")
 
-# Filtrar el dataframe para que solo contenga los productos que varían su precio
-df_comparacion_precios_variabilidad <- df_comparacion_precios %>%
-  filter(producto_1 != producto_2)
-
-# Unir los dataframes por el nombre del producto
-df_ubis_precio <- inner_join(df_comparacion_precios_variabilidad, df_precios_ubi, by = "Nombre")
-
-
-# Filtrar los productos donde el precio es el mínimo y máximo, y agregar los precios
-df_min_max_ubi <- df_ubis_precio %>%
-  group_by(Nombre) %>%
-  summarise(municipio_precio_min = Municipio[which.min(c(Precio_por_unidad, producto_1, producto_2))],
-            precio_min = min(Precio_por_unidad, producto_1, producto_2),
-            municipio_precio_max = Municipio[which.max(c(Precio_por_unidad, producto_1, producto_2))],
-            precio_max = max(Precio_por_unidad, producto_1, producto_2))
-
-# Diferencia entre el precio máximo y mínimo
-df_min_max_ubi <- df_min_max_ubi %>%
-  mutate(diferencia_precio = precio_max / precio_min)
-
-# Filtrar los casos para evitar que se compare el precio de una unidad con la compra de más de una ud.
-df_min_max_ubi <- df_min_max_ubi %>%
-  filter(diferencia_precio < 2)
-
-
 ```
 
 
@@ -677,7 +652,7 @@ df_fruta_pescados %>% group_by(Nombre) %>% summarise(contador =  n())  %>%
        x = "Frutas y pescados",
        y = "Frecuencia",
        caption = "Los datos han sido extraídos de tickets de Mercadona")+
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      theme(axis.text.x = element_blank())
 
 ggsave("./graficas/Grafica3.jpg")
 #Los 3 productos más vendidos son:
@@ -690,7 +665,7 @@ df_productos_todos %>% group_by(Nombre) %>% summarise(contador =  n())  %>%
        x = "Productos",
        y = "Frecuencia",
        caption = "Los datos han sido extraídos de tickets de Mercadona") + 
-       theme(axis.text.x = element_text(angle = 45, hjust = 1))
+       theme(axis.text.x = element_blank())
 
 
 
@@ -750,6 +725,7 @@ df_productos_todos %>% group_by(Factura_simpl, Total_euros) %>% summarise(contad
   geom_smooth(method = "lm", se = FALSE) + # Añadir línea de regresión
   labs(title = "Correlación entre Cantidad y Total Euros", 
        x = "Cantidad", y = "Total Euros") 
+ggsave("./graficas/GraficaCorrelacion.jpg")
 ```
 
 
