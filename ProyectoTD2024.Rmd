@@ -539,7 +539,7 @@ variabilidad_precios <- df_unidad %>%
   arrange(desc(desviacion_estandar)) %>%
   slice(1:6)
 
-# Gráfico top tres productos con más variación
+# Gráfico top productos con más variación
 ggplot(variabilidad_precios, aes(x = Nombre, y = desviacion_estandar, fill = Nombre)) +
   geom_bar(stat = "identity") +
   labs(title = "Gráfica 2.1",
