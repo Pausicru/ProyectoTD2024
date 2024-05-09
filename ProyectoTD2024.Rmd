@@ -524,7 +524,7 @@ ggsave("./graficas/Grafica1.1.jpg")
 ```
 
 ```{r}
-# 2. ¿Qué productos tienen la mayor variabilidad en los precios? Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos? ¿Los precios de los productos se mantienen en todos los supermercados?
+# 2. ¿Qué productos tienen la mayor variabilidad en los precios? Está relacionado el alto precio de un ticket con un alto consumo de frutas y verduras?¿Y de otro tipo de productos?
 
 # ¿Qué productos tienen la mayor variabilidad en los precios?
 
