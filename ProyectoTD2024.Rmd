@@ -1,6 +1,6 @@
 ---
-title: "Pon un título a tu documento"
-author: "Pon aquí tu nombre y apellidos"
+title: "PROYECTO TD 2024"
+author: "Marta Molina, Iñaki Martín, Nerea Galera, Sergio Mut, Paula Sigüenza"
 date: "`r Sys.Date()`"
 output:
   
