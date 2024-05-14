@@ -406,9 +406,13 @@ nombre_super   | Información del supermercado
 Parking        | Si el cliente ha utilizado el parking o no
 
 
-## Análisis de missing data en nuestro conjunto de interés:
-  En este subapartado pasaremos a detectar datos o valores anómalos, ya sean NA's (valores perdidos) u outliers   (valores‘alejados’ del resto). En primer lugar, respecto a los NA's, podemos ver que solamente existen en 4     columnas. Existen NA´s en las columnas (vbles.) PUnidad y en Total_euoros cuando se hace referencia a las       frutas y veduras y a pescados.
-  Esto tiene sentido, ya que, ambos dos tienen un formatodiferente al resto de productos, como ya hemos           comentado anteriormente. Además, existen NA´s en las columnas (vbles.) Kgs, Eur_el_kg y en Info cuando se hace   referencia al resto de productos que no sean ni frutas ni verduras ni pescados. Esto también tiene sentido, ya   que, complementa a lo anterior, es decir, el resto de productos no constan de ese tipo de formato. En segundo   lugar, para la detección de outliers sólo hace falta visualizar la gráfica (boxplot) dónde constan los 4        métodos vistos en la asignatura de Tratamiento de los Datos:
+## Análisis de valores atípicos en nuestro conjunto de interés:
+  En este subapartado pasaremos a detectar datos o valores atípicos, ya sean NA's (valores perdidos) u outliers   (valores‘alejados’ del resto). 
+  
+  En primer lugar, respecto a los NA's, podemos ver que solamente existen en 4     columnas. Existen NA´s en la columna (vble.) PUnidad cuando se hace referencia a las       frutas y veduras y a pescados.
+  Esto tiene sentido, ya que, ambos dos tienen un formato diferente al resto de productos, como ya hemos           comentado anteriormente. Además, existen NA´s en las columnas (vbles.) Kgs, Eur_el_kg y en Info cuando se hace   referencia al resto de productos que no sean ni frutas ni verduras ni pescados. Esto también tiene sentido, ya   que, complementa a lo anterior, es decir, el resto de productos no constan de ese tipo de formato.
+  
+  En segundo   lugar, para la detección de outliers sólo hace falta visualizar la gráfica (boxplot) dónde constan los 4        métodos vistos en la asignatura de Tratamiento de los Datos:
   
 `reglasigma(x)`, `reglahampel(x)`, `reglaboxplot(x)` y`reglapercentil(x)`.
 
@@ -417,11 +421,11 @@ Ahora, se hará una breve introducción a cada método:
   • Regla sigma 3 (reglasigma(x)): Este método asume que los datos siguen una distribución gaussiana, es decir,     una forma de campana. Utiliza la media y la desviación estándar para caracterizar los datos. Según esta         regla, los valores que están más allá de 3 desviaciones estándar de la media se consideran outliers.
   
   • Identificador Hampel (reglahampel(x)): A diferencia de la regla sigma, este método no asume que los datos       sigan una distribución gaussiana. En su lugar, utiliza estimadores robustos como la mediana y la desviación     absoluta mediana(MADM) para caracterizar los datos. Los valores que están más allá de 3 veces la MADM se        consideran outliers.
+  
   • Regla boxplot (reglaboxplot(x)): Este método utiliza un diagrama de caja (boxplot) para visualizar la           distribución de los datos. Define los valores típicos superiores e inferiores hasta el cuartil 75% y 25%        respectivamente, y la dispersión se calcula como el rango intercuartílico (IQR). Los valores que están más      allá de 1.5 veces el IQR por encima del cuartil 75% o por debajo del cuartil 25% se consideran outliers.
+  
   • Percentiles (reglapercentil(x)): Este método considera que cualquier valor que esté fuera del rango del         percentil 5% y 95% se puede considerar como atípico. Es decir, los valores que están por debajo del             percentil 5% o por encima del percentil 95% se consideran outliers.
  
- 
-
 ```{r include=FALSE}
 madm <- function(x, na.rm=T) { 
   aux1 = median(x,na.rm = TRUE)
@@ -516,8 +520,6 @@ FIGURA 1: Gráfica de outliers
 
   Distinguiremos el análisis entre las variables de tipo numérico, las de tipo categórica y las tipo factor, que   son una forma específica de representar variables categóricas. Este análisis es crucial, ya que, ciertos        estadísticos descriptivos (como por ejemplo la media) carecen de sentido en las variables categóricas.
   
-## Análisis bivariante:
-  
 ```{r echo=FALSE}  
   
  # 1. ¿Influye la hora de compra con el número de tickets en esos intervalos de tiempo?
@@ -533,7 +535,9 @@ intervalos <- seq(from = as.POSIXct("09:00", format = "%H:%M"),
 limites_intervalos <- c("09:00", "13:00", "17:00", "21:30")
 
 #Define las etiquetas de los intervalos
-etiquetas_intervalos <- c("9:00 a 12:59", "13:00 a 16:59", "17:00 a 21:30")
+etiquetas_intervalos <- c("1", "2", "3")
+
+intervalos_grafica <- c("9:00 a 12:59", "13:00 a 16:59", "17:00 a 21:30")
 
 #Crea una función para asignar etiquetas de intervalos
 asignar_intervalo <- function(Hora) {
@@ -561,7 +565,8 @@ df_calles %>% group_by(intervalos) %>% summarise(contador =  n())  %>% ggplot(ae
        subtitle = "Hora de compra V/S número de tickets en ese intervalo",
        x = "Intervalos horarios",
        y = "Número de Tickets",
-       caption = "Los datos han sido extraídos de tickets de Mercadona")
+       caption = "Los datos han sido extraídos de tickets de Mercadona") +
+       scale_x_discrete(labels = intervalos_grafica)
 ggsave("./graficas/Grafica1.jpg") 
   
 ```  
@@ -579,7 +584,8 @@ df_calles %>% ggplot(aes(x=intervalos, y= Total_euros, fill = intervalos)) + geo
        subtitle = "Relación entre la hora de compra y el precio total",
        x = "Intervalos horarios",
        y = "Total_euros",
-       caption = "Los datos han sido extraídos de tickets de Mercadona")
+       caption = "Los datos han sido extraídos de tickets de Mercadona") + 
+      scale_x_discrete(labels = intervalos_grafica)
 ggsave("./graficas/Grafica1.1.jpg")
 ```
 
@@ -679,15 +685,15 @@ FIGURA 7: ¿Qué productos han sido los más vendidos?
  df_calles  %>% group_by(Parking) %>% summarise(contador =  n())  %>% 
                 arrange(desc(contador)) %>% ggplot(aes(x=Parking, y= contador, fill = Parking))  + geom_bar(stat = "identity") +
        labs(title = "Gráfica 4",
-       subtitle = "Relación entre la cantidad de productos y el servicio Parking",
+       subtitle = "Relación entre los clientes y el servicio Parking",
        x = "Parking",
-       y = "Cantidad Productos",
+       y = "Clientes",
        caption = "Los datos han sido extraídos de tickets de Mercadona")
 ggsave("./graficas/Grafica4.jpg")
        
 ```  
 FIGURA 8: ¿Existe diferencia en el tamaño del ticket de compra entre aquellos clientes que utilizan el servicio de parking del supermercado y aquellos que no lo utilizan?
-  Como podemos observar, nos encontramos frente a otro gráfico de barras, representado con un bar_plot y          responde a nuestra pregunta con un rotundo no. Esto se explica gracias a que el tamaño de la compra no está     relacionado con si el cliente ha cogido parking o no, ya que se pueden dar factores como que haya aparcado su   vehículo relativamente cerca del supermercado, viva cerca del supermercado, etc.
+  Como podemos observar, nos encontramos frente a otro gráfico de barras, representado con un bar_plot y          responde a nuestra pregunta con un rotundo sí. Esto se explica gracias a que el tamaño de la compra está     relacionado con si el cliente ha utilizado el servicio Parking o no, ya que se pueden dar factores como que haya aparcado su   vehículo relativamente cerca del supermercado, viva cerca del supermercado, etc.
   
 ```{r echo=FALSE}  
   # ¿Existe diferencia entre el precio total de un ticket y el uso del servicio Parking?
@@ -721,7 +727,7 @@ FIGURA 10: ¿Cuántos tickets están registrados en cada población?
   En este diagrama de barras nos topamos con una gráfica realizada mediante la función geom_bar() ya que como     hemos mencionado antes utilizamos este tipo de gráficos siempre y cuando se trate de variables categóricas.     Interpretando el diagrama vemos que existe un número mayor de tickets en madrid por ejemplo, o valencia. Esto   se puede deber a que son ciudades más grandes y con una población bastante más elevada respecto al resto de     ubicaciones. También podríamos tener en cuenta que estas dos ciudades son dos de las ciudades con más           estudiantes del país, lo que conlleva a una mayor compra en supermercado y obviamente, la obtención de ticket.   Sabiendo esto, podemos deducir que los pueblos/ciudades más pequeños/pequeñas serán los que menos número de     tickets tengan.
  
   
-## Gráfica Correlación:
+## Análisis bivariante:
 ```{r echo=FALSE}
 
 df_productos_todos %>% group_by(Factura_simpl, Total_euros) %>% summarise(contador = n()) %>% ggplot(aes(x = contador, y = Total_euros)) +
